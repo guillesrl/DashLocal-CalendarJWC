@@ -48,5 +48,4 @@ Thumbs.db
 *.sqlite3
 
 # Service account key (sensitive)
-# Uncomment if you want to exclude it from repo
-# service-account-key.json
+service-account-key.json
