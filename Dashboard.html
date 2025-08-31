@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <base target="_self">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Dashboard</title>
+    <meta name="description" content="Dashboard de gestión para restaurante con menú, pedidos y reservas">
+    <!-- Google Calendar Service -->
+    <script src="calendar-service.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#1a56db",
+                        secondary: "#1e429f",
+                        accent: "#e53e3e",
+                        dark: "#111827",
+                        light: "#f9fafb"
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Mobile menu button -->
+    <div class="md:hidden bg-dark text-white p-4 flex items-center justify-between">
+        <h1 class="text-xl font-bold">Restaurant</h1>
+        <button id="mobile-menu-btn" class="text-white">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
+    
+    <div class="flex">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="fixed md:relative w-64 bg-dark text-white min-h-screen p-4 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out z-50">
+            <div class="hidden md:flex items-center justify-between mb-8">
+                <h1 class="text-2xl font-bold">Restaurant</h1>
+            </div>
+            
+            <nav>
+                <ul class="space-y-2">
+                    <li>
+                        <a href="#" onclick="showSection('dashboard')" class="flex items-center p-2 rounded hover:bg-secondary transition">
+                            <i class="fas fa-tachometer-alt mr-3"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" onclick="showSection('menu')" class="flex items-center p-2 rounded hover:bg-secondary transition">
+                            <i class="fas fa-utensils mr-3"></i>
+                            Menú
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" onclick="showSection('orders')" class="flex items-center p-2 rounded hover:bg-secondary transition">
+                            <i class="fas fa-clipboard-list mr-3"></i>
+                            Pedidos
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" onclick="showSection('reservations')" class="flex items-center p-2 rounded hover:bg-secondary transition">
+                            <i class="fas fa-calendar-alt mr-3"></i>
+                            Reservas
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Overlay for mobile -->
+        <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden hidden"></div>
+        
+        <!-- Main Content -->
+        <main class="flex-1 p-4 md:p-8 w-full">
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="section-content">
+                <h2 class="text-2xl font-bold mb-6">Resumen del Restaurante</h2>
+                
+                <div class="grid grid-cols-3 gap-2 md:gap-6 mb-6 md:mb-8">
+                    <div class="bg-white p-3 md:p-6 rounded-lg shadow">
+                        <h3 class="text-sm md:text-lg font-semibold mb-1 md:mb-2">Pedidos Hoy</h3>
+                        <p class="text-xl md:text-3xl font-bold text-primary" id="today-orders">0</p>
+                    </div>
+                    <div class="bg-white p-3 md:p-6 rounded-lg shadow">
+                        <h3 class="text-sm md:text-lg font-semibold mb-1 md:mb-2">Reservas Hoy</h3>
+                        <p class="text-xl md:text-3xl font-bold text-primary" id="today-reservations">0</p>
+                    </div>
+                    <div class="bg-white p-3 md:p-6 rounded-lg shadow">
+                        <h3 class="text-sm md:text-lg font-semibold mb-1 md:mb-2">Ingresos Hoy</h3>
+                        <p class="text-xl md:text-3xl font-bold text-primary" id="today-revenue">$0</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <h3 class="text-lg font-semibold mb-4">Pedidos Recientes</h3>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full" id="recent-orders">
+                                <thead>
+                                    <tr class="border-b">
+                                        <th class="text-left py-2">ID</th>
+                                        <th class="text-left py-2">Mesa</th>
+                                        <th class="text-left py-2">Total</th>
+                                        <th class="text-left py-2">Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Filled by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <h3 class="text-lg font-semibold mb-4">Próximas Reservas</h3>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full" id="upcoming-reservations">
+                                <thead>
+                                    <tr class="border-b">
+                                        <th class="text-left py-2">Nombre</th>
+                                        <th class="text-left py-2">Hora</th>
+                                        <th class="text-left py-2">Personas</th>
+                                        <th class="text-left py-2">Mesa</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Filled by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Menu Section -->
+            <section id="menu" class="section-content hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold">Gestión de Menú</h2>
+                    <button onclick="showAddMenuItemModal()" class="bg-primary text-white px-4 py-2 rounded hover:bg-secondary transition">
+                        <i class="fas fa-plus mr-2"></i>Agregar Item
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
+                                    <th class="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio</th>
+                                    <th class="hidden sm:table-cell px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="menu-items" class="bg-white divide-y divide-gray-200">
+                                <!-- Menu items will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Orders Section -->
+            <section id="orders" class="section-content hidden">
+                <h2 class="text-2xl font-bold mb-6">Gestión de Pedidos</h2>
+                
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mesa</th>
+                                    <th class="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                                    <th class="hidden sm:table-cell px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hora</th>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="order-items" class="bg-white divide-y divide-gray-200">
+                                <!-- Order items will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Reservations Section -->
+            <section id="reservations" class="section-content hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold">Gestión de Reservas</h2>
+                    <button onclick="showAddReservationModal()" class="bg-primary text-white px-4 py-2 rounded hover:bg-secondary transition">
+                        <i class="fas fa-plus mr-2"></i>Nueva Reserva
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+                                    <th class="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hora</th>
+                                    <th class="hidden sm:table-cell px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Personas</th>
+                                    <th class="hidden sm:table-cell px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mesa</th>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reservation-items" class="bg-white divide-y divide-gray-200">
+                                <!-- Reservation items will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Add Menu Item Modal -->
+    <div id="add-menu-item-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Agregar Item al Menú</h3>
+                <button onclick="hideModal('add-menu-item-modal')" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="add-menu-item-form">
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Nombre</label>
+                    <input type="text" name="name" class="w-full px-3 py-2 border rounded" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Descripción</label>
+                    <textarea name="description" class="w-full px-3 py-2 border rounded" rows="3"></textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Precio</label>
+                    <input type="number" step="0.01" name="price" class="w-full px-3 py-2 border rounded" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Categoría</label>
+                    <select name="category" class="w-full px-3 py-2 border rounded" required>
+                        <option value="entradas">Entradas</option>
+                        <option value="platos-principales">Platos Principales</option>
+                        <option value="postres">Postres</option>
+                        <option value="bebidas">Bebidas</option>
+                    </select>
+                </div>
+                <div class="flex justify-end">
+                    <button type="button" onclick="hideModal('add-menu-item-modal')" class="mr-2 px-4 py-2 border rounded">Cancelar</button>
+                    <button type="submit" class="bg-primary text-white px-4 py-2 rounded hover:bg-secondary transition">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Reservation Modal -->
+    <div id="add-reservation-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Nueva Reserva</h3>
+                <button onclick="hideModal('add-reservation-modal')" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="add-reservation-form">
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Nombre del Cliente</label>
+                    <input type="text" name="customer_name" class="w-full px-3 py-2 border rounded" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Teléfono</label>
+                    <input type="tel" name="phone" class="w-full px-3 py-2 border rounded" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Fecha</label>
+                    <input type="date" name="date" class="w-full px-3 py-2 border rounded" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Hora</label>
+                    <input type="time" name="time" class="w-full px-3 py-2 border rounded" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Número de Personas</label>
+                    <input type="number" name="people" min="1" class="w-full px-3 py-2 border rounded" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Mesa</label>
+                    <select name="table" class="w-full px-3 py-2 border rounded" required>
+                        <option value="1">Mesa 1</option>
+                        <option value="2">Mesa 2</option>
+                        <option value="3">Mesa 3</option>
+                        <option value="4">Mesa 4</option>
+                        <option value="5">Mesa 5</option>
+                    </select>
+                </div>
+                <div class="flex justify-end">
+                    <button type="button" onclick="hideModal('add-reservation-modal')" class="mr-2 px-4 py-2 border rounded">Cancelar</button>
+                    <button type="submit" class="bg-primary text-white px-4 py-2 rounded hover:bg-secondary transition">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // API configuration
+        const config = {
+            apiBaseUrl: 'http://localhost:3000/api',
+            googleCalendar: {
+                calendarId: "2385d6833d1b3a264fea105c8e3b81c996a274bafe7f42ee742b92cccc783801@group.calendar.google.com"
+            }
+        };
+
+        // Data storage - now using PostgreSQL API
+        let menuItems = [];
+        let orders = [];
+        let reservations = [];
+
+        // API Helper functions
+        async function apiRequest(endpoint, options = {}) {
+            try {
+                const response = await fetch(`${config.apiBaseUrl}${endpoint}`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.statusText}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('API Request failed:', error);
+                showNotification('Error de conexión con el servidor', 'error');
+                throw error;
+            }
+        }
+
+        // Load data from PostgreSQL API
+        async function loadDataFromAPI() {
+            try {
+                const [menuData, ordersData, reservationsData] = await Promise.all([
+                    apiRequest('/menu'),
+                    apiRequest('/orders'),
+                    apiRequest('/reservations')
+                ]);
+                
+                menuItems = menuData;
+                orders = ordersData;
+                reservations = reservationsData;
+                
+                console.log('Datos cargados desde PostgreSQL:', { menuItems, orders, reservations });
+            } catch (error) {
+                console.error('Error cargando datos desde API:', error);
+                // Fallback to localStorage if API fails
+                loadFromLocalStorage();
+            }
+        }
+
+        // Fallback: Load from localStorage (for offline mode)
+        function loadFromLocalStorage() {
+            menuItems = JSON.parse(localStorage.getItem('menuItems')) || [];
+            orders = JSON.parse(localStorage.getItem('orders')) || [];
+            reservations = JSON.parse(localStorage.getItem('reservations')) || [];
+            console.log('Datos cargados desde localStorage (modo offline)');
+        }
+
+        // Save to localStorage as backup
+        function saveToLocalStorage() {
+            localStorage.setItem('menuItems', JSON.stringify(menuItems));
+            localStorage.setItem('orders', JSON.stringify(orders));
+            localStorage.setItem('reservations', JSON.stringify(reservations));
+        }
+
+        // Initialize the dashboard
+        document.addEventListener("DOMContentLoaded", async function() {
+            showSection('dashboard');
+            
+            // Load data from PostgreSQL API
+            await loadDataFromAPI();
+            
+            // Mobile menu hamburguesa
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            mobileMenuBtn.addEventListener('click', function() {
+                sidebar.classList.toggle('-translate-x-full');
+                overlay.classList.toggle('hidden');
+            });
+            
+            overlay.addEventListener('click', function() {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            });
+            
+            // Close mobile menu when clicking on navigation links
+            const navLinks = sidebar.querySelectorAll('a');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth < 768) {
+                        sidebar.classList.add('-translate-x-full');
+                        overlay.classList.add('hidden');
+                    }
+                });
+            });
+            
+            // Update UI with loaded data
+            loadDashboardStats();
+            loadMenuItems();
+            loadOrders();
+            loadReservations();
+            
+            // Form submissions
+            document.getElementById("add-menu-item-form").addEventListener("submit", addMenuItem);
+            document.getElementById("add-reservation-form").addEventListener("submit", addReservation);
+        });
+
+        // Google Calendar is now handled by the backend
+        // No need for frontend calendar initialization
+
+        // Navigation functions
+        function showSection(sectionId) {
+            document.querySelectorAll(".section-content").forEach(section => {
+                section.classList.add("hidden");
+            });
+            document.getElementById(sectionId).classList.remove("hidden");
+            
+            // Load data for the specific section
+            switch(sectionId) {
+                case 'dashboard':
+                    loadDashboardStats();
+                    break;
+                case 'menu':
+                    loadMenuItems();
+                    break;
+                case 'orders':
+                    loadOrders();
+                    break;
+                case 'reservations':
+                    loadReservations();
+                    break;
+            }
+        }
+
+        // Modal functions
+        function showAddMenuItemModal() {
+            document.getElementById("add-menu-item-modal").classList.remove("hidden");
+        }
+
+        function showAddReservationModal() {
+            document.getElementById("add-reservation-modal").classList.remove("hidden");
+        }
+
+        function hideModal(modalId) {
+            document.getElementById(modalId).classList.add("hidden");
+        }
+
+        // Data loading functions
+        function loadDashboardStats() {
+            // In a real app, these would come from API calls
+            document.getElementById("today-orders").textContent = orders.length;
+            document.getElementById("today-reservations").textContent = reservations.length;
+            document.getElementById("today-revenue").textContent = "$" + orders.reduce((sum, order) => sum + parseFloat(order.total || 0), 0).toFixed(2);
+            
+            // Recent orders
+            const recentOrdersTable = document.getElementById("recent-orders").querySelector("tbody");
+            recentOrdersTable.innerHTML = "";
+            orders.slice(0, 5).forEach(order => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td class="py-2">${order.id}</td>
+                    <td class="py-2">${order.table_number}</td>
+                    <td class="py-2">$${parseFloat(order.total || 0).toFixed(2)}</td>
+                    <td class="py-2">
+                        <span class="px-2 py-1 rounded-full text-xs ${order.status === 'servido' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                            ${order.status}
+                        </span>
+                    </td>
+                `;
+                recentOrdersTable.appendChild(row);
+            });
+            
+            // Upcoming reservations
+            const upcomingReservationsTable = document.getElementById("upcoming-reservations").querySelector("tbody");
+            upcomingReservationsTable.innerHTML = "";
+            reservations.slice(0, 5).forEach(reservation => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td class="py-2">${reservation.customer_name}</td>
+                    <td class="py-2">${reservation.time}</td>
+                    <td class="py-2">${reservation.people}</td>
+                    <td class="py-2">${reservation.table_number}</td>
+                `;
+                upcomingReservationsTable.appendChild(row);
+            });
+        }
+
+        function loadMenuItems() {
+            const menuItemsTable = document.getElementById("menu-items");
+            menuItemsTable.innerHTML = "";
+            
+            menuItems.forEach(item => {
+                const row = document.createElement("tr");
+                const formattedCategory = item.category.replace('-', ' ');
+                row.innerHTML = `
+                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">${item.id}</td>
+                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">${item.name}</td>
+                    <td class="hidden md:table-cell px-6 py-4">${item.description}</td>
+                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">$${parseFloat(item.price).toFixed(2)}</td>
+                    <td class="hidden sm:table-cell px-3 md:px-6 py-4 whitespace-nowrap capitalize">${formattedCategory}</td>
+                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">
+                        <button onclick="editMenuItem(${item.id})" class="text-blue-600 hover:text-blue-800 mr-1 md:mr-2">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteMenuItem(${item.id})" class="text-red-600 hover:text-red-800">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                menuItemsTable.appendChild(row);
+            });
+        }
+
+        function loadOrders() {
+            const ordersTable = document.getElementById("order-items");
+            ordersTable.innerHTML = "";
+            
+            orders.forEach(order => {
+                const row = document.createElement("tr");
+                const items = Array.isArray(order.items) ? order.items.join(", ") : 
+                             (typeof order.items === 'string' ? JSON.parse(order.items).join(", ") : order.items);
+                const orderTime = order.created_at ? new Date(order.created_at).toLocaleTimeString() : 'N/A';
+                
+                row.innerHTML = `
+                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">${order.id}</td>
+                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">${order.table_number}</td>
+                    <td class="hidden md:table-cell px-6 py-4">${items}</td>
+                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">$${parseFloat(order.total).toFixed(2)}</td>
+                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 rounded-full text-xs ${order.status === 'servido' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                            ${order.status}
+                        </span>
+                    </td>
+                    <td class="hidden sm:table-cell px-3 md:px-6 py-4 whitespace-nowrap">${orderTime}</td>
+                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">
+                        <button onclick="updateOrderStatus(${order.id}, 'servido')" class="text-green-600 hover:text-green-800 mr-1 md:mr-2">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        <button onclick="cancelOrder(${order.id})" class="text-red-600 hover:text-red-800">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </td>
+                `;
+                ordersTable.appendChild(row);
+            });
+        }
+
+        function loadReservations() {
+            const reservationsTable = document.getElementById("reservation-items");
+            reservationsTable.innerHTML = "";
+            
+            reservations.forEach(reservation => {
+                const row = document.createElement("tr");
+                const reservationDate = new Date(reservation.date).toLocaleDateString();
+                const reservationTime = reservation.time;
+                
+                row.innerHTML = `
+                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">${reservation.id}</td>
+                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">${reservation.customer_name}</td>
+                    <td class="hidden md:table-cell px-6 py-4 whitespace-nowrap">${reservation.phone}</td>
+                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">${reservationDate}</td>
+                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">${reservationTime}</td>
+                    <td class="hidden sm:table-cell px-3 md:px-6 py-4 whitespace-nowrap">${reservation.people}</td>
+                    <td class="hidden sm:table-cell px-3 md:px-6 py-4 whitespace-nowrap">${reservation.table_number}</td>
+                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">
+                        <button onclick="editReservation(${reservation.id})" class="text-blue-600 hover:text-blue-800 mr-1 md:mr-2">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="cancelReservation(${reservation.id})" class="text-red-600 hover:text-red-800">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                reservationsTable.appendChild(row);
+            });
+        }
+
+        // CRUD operations
+        async function addMenuItem(e) {
+            e.preventDefault();
+            const form = e.target;
+            const newItem = {
+                name: form.name.value,
+                description: form.description.value,
+                price: parseFloat(form.price.value),
+                category: form.category.value
+            };
+            
+            try {
+                const createdItem = await apiRequest('/menu', {
+                    method: 'POST',
+                    body: JSON.stringify(newItem)
+                });
+                
+                menuItems.push(createdItem);
+                saveToLocalStorage();
+                loadMenuItems();
+                hideModal('add-menu-item-modal');
+                form.reset();
+                showNotification('Elemento del menú agregado exitosamente', 'success');
+            } catch (error) {
+                showNotification('Error al agregar elemento del menú', 'error');
+            }
+        }
+
+        function editMenuItem(id) {
+            const item = menuItems.find(item => item.id === id);
+            if (item) {
+                const form = document.getElementById("add-menu-item-form");
+                form.name.value = item.name;
+                form.description.value = item.description;
+                form.price.value = item.price;
+                form.category.value = item.category;
+                
+                // Change form to edit mode
+                form.dataset.editId = id;
+                form.querySelector("button[type='submit']").textContent = "Actualizar";
+                
+                showAddMenuItemModal();
+            }
+        }
+
+        async function deleteMenuItem(id) {
+            if (confirm("¿Estás seguro de que quieres eliminar este item del menú?")) {
+                try {
+                    await apiRequest(`/menu/${id}`, { method: 'DELETE' });
+                    
+                    const index = menuItems.findIndex(item => item.id === id);
+                    if (index !== -1) {
+                        menuItems.splice(index, 1);
+                        saveToLocalStorage();
+                        loadMenuItems();
+                        showNotification('Elemento del menú eliminado exitosamente', 'success');
+                    }
+                } catch (error) {
+                    showNotification('Error al eliminar elemento del menú', 'error');
+                }
+            }
+        }
+
+        async function updateOrderStatus(id, status) {
+            try {
+                const order = orders.find(order => order.id === id);
+                if (order) {
+                    const updatedOrder = { ...order, status };
+                    await apiRequest(`/orders/${id}`, {
+                        method: 'PUT',
+                        body: JSON.stringify(updatedOrder)
+                    });
+                    
+                    order.status = status;
+                    saveToLocalStorage();
+                    loadOrders();
+                    loadDashboardStats();
+                    showNotification('Estado de orden actualizado', 'success');
+                }
+            } catch (error) {
+                showNotification('Error al actualizar estado de orden', 'error');
+            }
+        }
+
+        async function cancelOrder(id) {
+            if (confirm("¿Estás seguro de que quieres cancelar este pedido?")) {
+                try {
+                    await apiRequest(`/orders/${id}`, { method: 'DELETE' });
+                    
+                    const index = orders.findIndex(order => order.id === id);
+                    if (index !== -1) {
+                        orders.splice(index, 1);
+                        saveToLocalStorage();
+                        loadOrders();
+                        loadDashboardStats();
+                        showNotification('Orden cancelada exitosamente', 'success');
+                    }
+                } catch (error) {
+                    showNotification('Error al cancelar orden', 'error');
+                }
+            }
+        }
+
+        async function addReservation(e) {
+            e.preventDefault();
+            const form = e.target;
+            const newReservation = {
+                customer_name: form.customer_name.value,
+                phone: form.phone.value,
+                date: form.date.value,
+                time: form.time.value,
+                people: parseInt(form.people.value),
+                table_number: form.table.value
+            };
+            
+            try {
+                const createdReservation = await apiRequest('/reservations', {
+                    method: 'POST',
+                    body: JSON.stringify(newReservation)
+                });
+                
+                reservations.push(createdReservation);
+                saveToLocalStorage();
+                loadReservations();
+                loadDashboardStats();
+                hideModal('add-reservation-modal');
+                form.reset();
+                showNotification('Reserva creada exitosamente y sincronizada con Google Calendar', 'success');
+            } catch (error) {
+                showNotification('Error al crear reserva', 'error');
+            }
+        }
+
+        function editReservation(id) {
+            const reservation = reservations.find(r => r.id === id);
+            if (reservation) {
+                const form = document.getElementById("add-reservation-form");
+                form.customer_name.value = reservation.customer_name;
+                form.phone.value = reservation.phone;
+                form.date.value = reservation.date;
+                form.time.value = reservation.time;
+                form.people.value = reservation.people;
+                form.table.value = reservation.table;
+                
+                // Change form to edit mode
+                form.dataset.editId = id;
+                form.querySelector("button[type='submit']").textContent = "Actualizar";
+                
+                showAddReservationModal();
+            }
+        }
+
+        async function cancelReservation(id) {
+            if (confirm("¿Estás seguro de que quieres cancelar esta reserva?")) {
+                try {
+                    await apiRequest(`/reservations/${id}`, { method: 'DELETE' });
+                    
+                    const index = reservations.findIndex(r => r.id === id);
+                    if (index !== -1) {
+                        reservations.splice(index, 1);
+                        saveToLocalStorage();
+                        loadReservations();
+                        loadDashboardStats();
+                        showNotification('Reserva cancelada exitosamente y eliminada de Google Calendar', 'success');
+                    }
+                } catch (error) {
+                    showNotification('Error al cancelar reserva', 'error');
+                }
+            }
+        }
+
+        // Google Calendar integration is now handled by the backend
+        // No frontend calendar functions needed
+
+        // Notification system
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+                type === 'success' ? 'bg-green-500 text-white' :
+                type === 'error' ? 'bg-red-500 text-white' :
+                type === 'warning' ? 'bg-yellow-500 text-black' :
+                'bg-blue-500 text-white'
+            }`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
+        // PostgreSQL database operations are now handled by the backend API
+        // All data persistence is managed through REST endpoints
+    </script>
+</body>
+</html>
