@@ -12,9 +12,23 @@ class GoogleCalendarBackendService {
 
     async initialize() {
         try {
-            // Leer las credenciales del service account
-            const keyFile = path.resolve(this.serviceAccountKeyPath);
-            const credentials = JSON.parse(fs.readFileSync(keyFile, 'utf8'));
+            let credentials;
+            
+            // Intentar usar variables de entorno primero (para producción)
+            if (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY) {
+                credentials = {
+                    client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+                    private_key: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY.replace(/\\n/g, '\n')
+                };
+            } else {
+                // Fallback a archivo local (para desarrollo)
+                const keyFile = path.resolve(this.serviceAccountKeyPath);
+                if (fs.existsSync(keyFile)) {
+                    credentials = JSON.parse(fs.readFileSync(keyFile, 'utf8'));
+                } else {
+                    throw new Error('No se encontraron credenciales de Google Calendar');
+                }
+            }
 
             // Configurar autenticación JWT
             this.auth = new google.auth.JWT(
