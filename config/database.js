@@ -2,9 +2,8 @@ const { Pool } = require('pg');
 require('dotenv').config();
 
 const pool = new Pool({
-    host: '/var/run/postgresql',
-    database: process.env.DB_NAME || 'restaurant_dashboard',
-    user: process.env.DB_USER || 'postgres',
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
     max: 20,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 2000,

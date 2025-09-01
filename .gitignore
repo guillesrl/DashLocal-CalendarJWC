@@ -49,3 +49,6 @@ Thumbs.db
 
 # Service account key (sensitive)
 service-account-key.json
+
+# Local Netlify folder
+.netlify
