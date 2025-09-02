@@ -169,8 +169,13 @@
 
             <!-- Orders Section -->
             <section id="orders" class="section-content hidden">
-                <h2 class="text-2xl font-bold mb-6">Gestión de Pedidos</h2>
-                
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold">Gestión de Pedidos</h2>
+                    <button onclick="showAddOrderModal()" class="bg-primary text-white px-4 py-2 rounded hover:bg-secondary transition">
+                        <i class="fas fa-plus mr-2"></i>Nuevo Pedido
+                    </button>
+                </div>
+
                 <div class="bg-white rounded-lg shadow overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="min-w-full">
@@ -225,6 +230,42 @@
                 </div>
             </section>
         </main>
+    </div>
+
+    <!-- Add Order Modal -->
+    <div id="add-order-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Agregar Pedido</h3>
+                <button onclick="hideModal('add-order-modal')" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="add-order-form">
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Mesa</label>
+                    <select name="table_number" class="w-full px-3 py-2 border rounded" required>
+                        <option value="1">Mesa 1</option>
+                        <option value="2">Mesa 2</option>
+                        <option value="3">Mesa 3</option>
+                        <option value="4">Mesa 4</option>
+                        <option value="5">Mesa 5</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Items del Pedido</label>
+                    <textarea name="items" class="w-full px-3 py-2 border rounded" rows="3" placeholder="Ej: Pizza Margherita, Coca Cola, Ensalada César" required></textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Total ($)</label>
+                    <input type="number" name="total" step="0.01" min="0" class="w-full px-3 py-2 border rounded" required>
+                </div>
+                <div class="flex justify-end">
+                    <button type="button" onclick="hideModal('add-order-modal')" class="mr-2 px-4 py-2 border rounded">Cancelar</button>
+                    <button type="submit" class="bg-primary text-white px-4 py-2 rounded hover:bg-secondary transition">Guardar</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- Add Menu Item Modal -->
@@ -428,6 +469,7 @@
             
             // Form submissions
             document.getElementById("add-menu-item-form").addEventListener("submit", addMenuItem);
+            document.getElementById("add-order-form").addEventListener("submit", addOrder);
             document.getElementById("add-reservation-form").addEventListener("submit", addReservation);
         });
 
@@ -464,7 +506,39 @@
         }
 
         function showAddReservationModal() {
-            document.getElementById("add-reservation-modal").classList.remove("hidden");
+            showModal('add-reservation-modal');
+        }
+
+        function showAddOrderModal() {
+            showModal('add-order-modal');
+        }
+
+        async function addOrder(e) {
+            e.preventDefault();
+            const form = e.target;
+            const newOrder = {
+                table_number: parseInt(form.table_number.value),
+                items: form.items.value.split(',').map(item => item.trim()),
+                total: parseFloat(form.total.value),
+                status: 'pendiente'
+            };
+            
+            try {
+                const createdOrder = await apiRequest('/orders', {
+                    method: 'POST',
+                    body: JSON.stringify(newOrder)
+                });
+                
+                orders.push(createdOrder);
+                saveToLocalStorage();
+                loadOrders();
+                loadDashboardStats();
+                hideModal('add-order-modal');
+                form.reset();
+                showNotification('Pedido creado exitosamente', 'success');
+            } catch (error) {
+                showNotification('Error al crear pedido', 'error');
+            }
         }
 
         function hideModal(modalId) {

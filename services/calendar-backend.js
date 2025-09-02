@@ -73,16 +73,19 @@ class GoogleCalendarBackendService {
             
             const endTime = new Date(startTime.getTime() + 1 * 60 * 60 * 1000);
 
+            // Usar zona horaria de España/Madrid para consistencia
+            const timeZone = process.env.TIMEZONE || 'Europe/Madrid';
+            
             const event = {
                 summary: `Reserva - ${reservation.customer_name}`,
                 description: `Mesa ${reservation.table_number} para ${reservation.people} personas.\nTeléfono: ${reservation.phone}\nID Reserva: ${reservation.id}`,
                 start: {
                     dateTime: startTime.toISOString(),
-                    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                    timeZone: timeZone
                 },
                 end: {
                     dateTime: endTime.toISOString(),
-                    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                    timeZone: timeZone
                 },
                 reminders: {
                     useDefault: false,
@@ -131,19 +134,36 @@ class GoogleCalendarBackendService {
                 await this.initialize();
             }
 
-            const startTime = new Date(`${reservation.date}T${reservation.time}:00`);
+            // Usar la misma lógica de parsing que en createEvent para consistencia
+            const dateStr = reservation.date instanceof Date ? 
+                reservation.date.toISOString().split('T')[0] : 
+                reservation.date;
+            const timeStr = reservation.time instanceof Date ?
+                reservation.time.toTimeString().split(' ')[0] :
+                reservation.time;
+            
+            const startTime = new Date(`${dateStr}T${timeStr}`);
+            
+            // Verificar que la fecha es válida
+            if (isNaN(startTime.getTime())) {
+                throw new Error(`Fecha/hora inválida: ${dateStr}T${timeStr}`);
+            }
+            
             const endTime = new Date(startTime.getTime() + 1 * 60 * 60 * 1000);
 
+            // Usar zona horaria de España/Madrid para consistencia
+            const timeZone = process.env.TIMEZONE || 'Europe/Madrid';
+            
             const event = {
                 summary: `Reserva - ${reservation.customer_name}`,
                 description: `Mesa ${reservation.table_number} para ${reservation.people} personas.\nTeléfono: ${reservation.phone}\nID Reserva: ${reservation.id}`,
                 start: {
                     dateTime: startTime.toISOString(),
-                    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                    timeZone: timeZone
                 },
                 end: {
                     dateTime: endTime.toISOString(),
-                    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                    timeZone: timeZone
                 }
             };
 
