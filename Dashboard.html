@@ -551,10 +551,22 @@
 
         // Data loading functions
         function loadDashboardStats() {
-            // In a real app, these would come from API calls
-            document.getElementById("today-orders").textContent = orders.length;
-            document.getElementById("today-reservations").textContent = reservations.length;
-            document.getElementById("today-revenue").textContent = "$" + orders.reduce((sum, order) => sum + parseFloat(order.total || 0), 0).toFixed(2);
+            // Filter for today's data using local timezone (Europe/Madrid)
+            const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD format in local timezone
+            
+            const todayOrders = orders.filter(order => {
+                const orderDate = new Date(order.created_at).toLocaleDateString('en-CA');
+                return orderDate === today;
+            });
+            
+            const todayReservations = reservations.filter(reservation => {
+                const reservationDate = new Date(reservation.date).toLocaleDateString('en-CA');
+                return reservationDate === today;
+            });
+            
+            document.getElementById("today-orders").textContent = todayOrders.length;
+            document.getElementById("today-reservations").textContent = todayReservations.length;
+            document.getElementById("today-revenue").textContent = "$" + todayOrders.reduce((sum, order) => sum + parseFloat(order.total || 0), 0).toFixed(2);
             
             // Recent orders
             const recentOrdersTable = document.getElementById("recent-orders").querySelector("tbody");
@@ -574,10 +586,16 @@
                 recentOrdersTable.appendChild(row);
             });
             
-            // Upcoming reservations
+            // Upcoming reservations (today and future)
             const upcomingReservationsTable = document.getElementById("upcoming-reservations").querySelector("tbody");
             upcomingReservationsTable.innerHTML = "";
-            reservations.slice(0, 5).forEach(reservation => {
+            
+            const upcomingReservations = reservations.filter(reservation => {
+                const reservationDate = new Date(reservation.date).toLocaleDateString('en-CA');
+                return reservationDate >= today;
+            }).slice(0, 5);
+            
+            upcomingReservations.forEach(reservation => {
                 const row = document.createElement("tr");
                 row.innerHTML = `
                     <td class="py-2">${reservation.customer_name}</td>
