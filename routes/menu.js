@@ -1,12 +1,17 @@
 const express = require('express');
-const { pool } = require('../config/database');
+const { supabase } = require('../config/database');
 const router = express.Router();
 
 // GET /api/menu - Obtener todos los elementos del menú
 router.get('/', async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM menu_items ORDER BY category, name');
-        res.json(result.rows);
+        const { data, error } = await supabase
+            .from('menu')
+            .select('*')
+            .order('id');
+        
+        if (error) throw error;
+        res.json(data);
     } catch (error) {
         console.error('Error obteniendo menú:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
@@ -16,18 +21,20 @@ router.get('/', async (req, res) => {
 // POST /api/menu - Crear nuevo elemento del menú
 router.post('/', async (req, res) => {
     try {
-        const { name, price, category, description } = req.body;
+        const { Nombre, Precio, Categoría, Ingredientes } = req.body;
         
-        if (!name || !price) {
+        if (!Nombre || !Precio) {
             return res.status(400).json({ error: 'Nombre y precio son requeridos' });
         }
 
-        const result = await pool.query(
-            'INSERT INTO menu_items (name, price, category, description) VALUES ($1, $2, $3, $4) RETURNING *',
-            [name, price, category, description]
-        );
-
-        res.status(201).json(result.rows[0]);
+        const { data, error } = await supabase
+            .from('menu')
+            .insert([{ Nombre, Precio, Categoría, Ingredientes }])
+            .select()
+            .single();
+        
+        if (error) throw error;
+        res.status(201).json(data);
     } catch (error) {
         console.error('Error creando elemento del menú:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
@@ -38,18 +45,23 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, price, category, description } = req.body;
+        const { Nombre, Precio, Categoría, Ingredientes } = req.body;
 
-        const result = await pool.query(
-            'UPDATE menu_items SET name = $1, price = $2, category = $3, description = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $5 RETURNING *',
-            [name, price, category, description, id]
-        );
+        const { data, error } = await supabase
+            .from('menu')
+            .update({ Nombre, Precio, Categoría, Ingredientes })
+            .eq('id', id)
+            .select()
+            .single();
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Elemento del menú no encontrado' });
+        if (error) {
+            if (error.code === 'PGRST116') {
+                return res.status(404).json({ error: 'Elemento del menú no encontrado' });
+            }
+            throw error;
         }
 
-        res.json(result.rows[0]);
+        res.json(data);
     } catch (error) {
         console.error('Error actualizando elemento del menú:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
@@ -61,10 +73,18 @@ router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
 
-        const result = await pool.query('DELETE FROM menu_items WHERE id = $1 RETURNING *', [id]);
+        const { data, error } = await supabase
+            .from('menu')
+            .delete()
+            .eq('id', id)
+            .select()
+            .single();
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Elemento del menú no encontrado' });
+        if (error) {
+            if (error.code === 'PGRST116') {
+                return res.status(404).json({ error: 'Elemento del menú no encontrado' });
+            }
+            throw error;
         }
 
         res.json({ message: 'Elemento del menú eliminado correctamente' });

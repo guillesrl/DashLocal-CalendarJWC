@@ -1,34 +1,56 @@
-const { Pool } = require('pg');
+const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
-});
+// Configuración de Supabase
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
 
-// Manejar errores de conexión
-pool.on('error', (err, client) => {
-    console.error('Error inesperado en cliente de base de datos:', err);
-    process.exit(-1);
-});
+if (!supabaseUrl || !supabaseKey) {
+    console.error('❌ Faltan variables de entorno de Supabase');
+    process.exit(1);
+}
+
+// Crear cliente de Supabase
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Función para probar la conexión
 async function testConnection() {
     try {
-        const client = await pool.connect();
-        console.log('✅ Conexión a PostgreSQL establecida correctamente');
-        client.release();
+        const { data, error } = await supabase
+            .from('menu')
+            .select('count')
+            .limit(1);
+        
+        if (error) {
+            console.error('❌ Error conectando a Supabase:', error.message);
+            return false;
+        }
+        
+        console.log('✅ Conexión a Supabase establecida correctamente');
         return true;
     } catch (error) {
-        console.error('❌ Error conectando a PostgreSQL:', error.message);
+        console.error('❌ Error conectando a Supabase:', error.message);
         return false;
     }
 }
 
+// Función helper para ejecutar queries SQL directas (si es necesario)
+async function executeQuery(query, params = []) {
+    try {
+        const { data, error } = await supabase.rpc('execute_sql', {
+            query: query,
+            params: params
+        });
+        
+        if (error) throw error;
+        return { rows: data };
+    } catch (error) {
+        throw error;
+    }
+}
+
 module.exports = {
-    pool,
-    testConnection
+    supabase,
+    testConnection,
+    executeQuery
 };

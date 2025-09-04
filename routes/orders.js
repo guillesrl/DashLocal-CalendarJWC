@@ -1,12 +1,17 @@
 const express = require('express');
-const { pool } = require('../config/database');
+const { supabase } = require('../config/database');
 const router = express.Router();
 
 // GET /api/orders - Obtener todas las órdenes
 router.get('/', async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM orders ORDER BY created_at DESC');
-        res.json(result.rows);
+        const { data, error } = await supabase
+            .from('orders')
+            .select('*')
+            .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        res.json(data);
     } catch (error) {
         console.error('Error obteniendo órdenes:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
@@ -16,18 +21,20 @@ router.get('/', async (req, res) => {
 // POST /api/orders - Crear nueva orden
 router.post('/', async (req, res) => {
     try {
-        const { table_number, items, total } = req.body;
+        const { direccion, items, total } = req.body;
         
-        if (!table_number || !items || !total) {
-            return res.status(400).json({ error: 'Mesa, items y total son requeridos' });
+        if (!direccion || !items || !total) {
+            return res.status(400).json({ error: 'Dirección, items y total son requeridos' });
         }
 
-        const result = await pool.query(
-            'INSERT INTO orders (table_number, items, total) VALUES ($1, $2, $3) RETURNING *',
-            [table_number, JSON.stringify(items), total]
-        );
-
-        res.status(201).json(result.rows[0]);
+        const { data, error } = await supabase
+            .from('orders')
+            .insert([{ direccion, items: JSON.stringify(items), total }])
+            .select()
+            .single();
+        
+        if (error) throw error;
+        res.status(201).json(data);
     } catch (error) {
         console.error('Error creando orden:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
@@ -38,18 +45,29 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { table_number, items, total, status } = req.body;
+        const { direccion, items, total, status } = req.body;
 
-        const result = await pool.query(
-            'UPDATE orders SET table_number = $1, items = $2, total = $3, status = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $5 RETURNING *',
-            [table_number, JSON.stringify(items), total, status, id]
-        );
+        const { data, error } = await supabase
+            .from('orders')
+            .update({ 
+                direccion, 
+                items: JSON.stringify(items), 
+                total, 
+                status, 
+                updated_at: new Date().toISOString() 
+            })
+            .eq('id', id)
+            .select()
+            .single();
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Orden no encontrada' });
+        if (error) {
+            if (error.code === 'PGRST116') {
+                return res.status(404).json({ error: 'Orden no encontrada' });
+            }
+            throw error;
         }
 
-        res.json(result.rows[0]);
+        res.json(data);
     } catch (error) {
         console.error('Error actualizando orden:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
@@ -61,10 +79,18 @@ router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
 
-        const result = await pool.query('DELETE FROM orders WHERE id = $1 RETURNING *', [id]);
+        const { data, error } = await supabase
+            .from('orders')
+            .delete()
+            .eq('id', id)
+            .select()
+            .single();
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Orden no encontrada' });
+        if (error) {
+            if (error.code === 'PGRST116') {
+                return res.status(404).json({ error: 'Orden no encontrada' });
+            }
+            throw error;
         }
 
         res.json({ message: 'Orden eliminada correctamente' });

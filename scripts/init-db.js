@@ -24,13 +24,25 @@ async function initializeDatabase() {
         await client.query(`
             CREATE TABLE IF NOT EXISTS orders (
                 id SERIAL PRIMARY KEY,
-                table_number INTEGER NOT NULL,
+                direccion VARCHAR(255) NOT NULL,
                 items JSONB NOT NULL,
                 total DECIMAL(10,2) NOT NULL,
                 status VARCHAR(50) DEFAULT 'pending',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
+        `);
+        
+        // Migrar datos existentes de table_number a direccion si la columna existe
+        await client.query(`
+            DO $$ 
+            BEGIN
+                IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='orders' AND column_name='table_number') THEN
+                    ALTER TABLE orders ADD COLUMN IF NOT EXISTS direccion VARCHAR(255);
+                    UPDATE orders SET direccion = CONCAT('Mesa ', table_number) WHERE direccion IS NULL;
+                    ALTER TABLE orders DROP COLUMN IF EXISTS table_number;
+                END IF;
+            END $$;
         `);
         
         // Crear tabla de reservas
