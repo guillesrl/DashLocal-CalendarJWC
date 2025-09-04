@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
@@ -26,13 +27,18 @@
         }
     </script>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="bg-gray-100 dark:bg-gray-900 min-h-screen transition-colors duration-300">
     <!-- Mobile menu button -->
     <div class="md:hidden bg-dark text-white p-4 flex items-center justify-between">
         <h1 class="text-xl font-bold">Restaurant</h1>
-        <button id="mobile-menu-btn" class="text-white">
-            <i class="fas fa-bars"></i>
-        </button>
+        <div class="flex items-center space-x-2">
+            <button id="dark-mode-toggle-mobile" class="p-2 rounded-lg hover:bg-secondary transition" title="Cambiar modo">
+                <i class="fas fa-moon" id="dark-mode-icon-mobile"></i>
+            </button>
+            <button id="mobile-menu-btn" class="text-white">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
     </div>
     
     <div class="flex">
@@ -40,6 +46,9 @@
         <aside id="sidebar" class="fixed md:relative w-64 bg-dark text-white min-h-screen p-4 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out z-50">
             <div class="hidden md:flex items-center justify-between mb-8">
                 <h1 class="text-2xl font-bold">Restaurant</h1>
+                <button id="dark-mode-toggle" class="p-2 rounded-lg hover:bg-secondary transition" title="Cambiar modo">
+                    <i class="fas fa-moon" id="dark-mode-icon"></i>
+                </button>
             </div>
             
             <nav>
@@ -76,29 +85,29 @@
         <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden hidden"></div>
         
         <!-- Main Content -->
-        <main class="flex-1 p-4 md:p-8 w-full">
+        <main class="flex-1 p-4 md:p-8 w-full dark:text-white">
             <!-- Dashboard Section -->
             <section id="dashboard" class="section-content">
                 <h2 class="text-2xl font-bold mb-6">Resumen del Restaurante</h2>
                 
                 <div class="grid grid-cols-3 gap-2 md:gap-6 mb-6 md:mb-8">
-                    <div class="bg-white p-3 md:p-6 rounded-lg shadow">
-                        <h3 class="text-sm md:text-lg font-semibold mb-1 md:mb-2">Pedidos Hoy</h3>
+                    <div class="bg-white dark:bg-gray-800 p-3 md:p-6 rounded-lg shadow">
+                        <h3 class="text-sm md:text-lg font-semibold mb-1 md:mb-2 dark:text-white">Pedidos Hoy</h3>
                         <p class="text-xl md:text-3xl font-bold text-primary" id="today-orders">0</p>
                     </div>
-                    <div class="bg-white p-3 md:p-6 rounded-lg shadow">
-                        <h3 class="text-sm md:text-lg font-semibold mb-1 md:mb-2">Reservas Hoy</h3>
+                    <div class="bg-white dark:bg-gray-800 p-3 md:p-6 rounded-lg shadow">
+                        <h3 class="text-sm md:text-lg font-semibold mb-1 md:mb-2 dark:text-white">Reservas Hoy</h3>
                         <p class="text-xl md:text-3xl font-bold text-primary" id="today-reservations">0</p>
                     </div>
-                    <div class="bg-white p-3 md:p-6 rounded-lg shadow">
-                        <h3 class="text-sm md:text-lg font-semibold mb-1 md:mb-2">Ingresos Hoy</h3>
+                    <div class="bg-white dark:bg-gray-800 p-3 md:p-6 rounded-lg shadow">
+                        <h3 class="text-sm md:text-lg font-semibold mb-1 md:mb-2 dark:text-white">Ingresos Hoy</h3>
                         <p class="text-xl md:text-3xl font-bold text-primary" id="today-revenue">$0</p>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="bg-white p-6 rounded-lg shadow">
-                        <h3 class="text-lg font-semibold mb-4">Pedidos Recientes</h3>
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                        <h3 class="text-lg font-semibold mb-4 dark:text-white">Pedidos Recientes</h3>
                         <div class="overflow-x-auto">
                             <table class="min-w-full" id="recent-orders">
                                 <thead>
@@ -116,8 +125,8 @@
                         </div>
                     </div>
 
-                    <div class="bg-white p-6 rounded-lg shadow">
-                        <h3 class="text-lg font-semibold mb-4">Próximas Reservas</h3>
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                        <h3 class="text-lg font-semibold mb-4 dark:text-white">Próximas Reservas</h3>
                         <div class="overflow-x-auto">
                             <table class="min-w-full" id="upcoming-reservations">
                                 <thead>
@@ -146,20 +155,20 @@
                     </button>
                 </div>
 
-                <div class="bg-white rounded-lg shadow overflow-hidden">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="min-w-full">
-                            <thead class="bg-gray-50">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
                                 <tr>
-                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-                                    <th class="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
-                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio</th>
-                                    <th class="hidden sm:table-cell px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
-                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ID</th>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Nombre</th>
+                                    <th class="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Descripción</th>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Precio</th>
+                                    <th class="hidden sm:table-cell px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Categoría</th>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody id="menu-items" class="bg-white divide-y divide-gray-200">
+                            <tbody id="menu-items" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                 <!-- Menu items will be loaded here -->
                             </tbody>
                         </table>
@@ -176,21 +185,20 @@
                     </button>
                 </div>
 
-                <div class="bg-white rounded-lg shadow overflow-hidden">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="min-w-full">
-                            <thead class="bg-gray-50">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
                                 <tr>
-                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dirección</th>
-                                    <th class="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
-                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                                    <th class="hidden sm:table-cell px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hora</th>
-                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ID</th>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Cliente</th>
+                                    <th class="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Dirección</th>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total</th>
+                                    <th class="hidden sm:table-cell px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Estado</th>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody id="order-items" class="bg-white divide-y divide-gray-200">
+                            <tbody id="orders-list" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                 <!-- Order items will be loaded here -->
                             </tbody>
                         </table>
@@ -207,22 +215,22 @@
                     </button>
                 </div>
 
-                <div class="bg-white rounded-lg shadow overflow-hidden">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="min-w-full">
-                            <thead class="bg-gray-50">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
                                 <tr>
-                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
-                                    <th class="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
-                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hora</th>
-                                    <th class="hidden sm:table-cell px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Personas</th>
-                                    <th class="hidden sm:table-cell px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mesa</th>
-                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ID</th>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Cliente</th>
+                                    <th class="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Teléfono</th>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Fecha</th>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Hora</th>
+                                    <th class="hidden sm:table-cell px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Personas</th>
+                                    <th class="hidden sm:table-cell px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Mesa</th>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody id="reservation-items" class="bg-white divide-y divide-gray-200">
+                            <tbody id="reservation-items" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                 <!-- Reservation items will be loaded here -->
                             </tbody>
                         </table>
@@ -461,6 +469,31 @@
             loadOrders();
             loadReservations();
             
+            // Initialize dark mode
+            initDarkMode();
+            
+            // Dark mode toggle event listeners with error handling
+            try {
+                const desktopToggle = document.getElementById('dark-mode-toggle');
+                const mobileToggle = document.getElementById('dark-mode-toggle-mobile');
+                
+                if (desktopToggle) {
+                    desktopToggle.addEventListener('click', toggleDarkMode);
+                    console.log('✅ Desktop dark mode button listener added');
+                } else {
+                    console.error('❌ Desktop dark mode button not found');
+                }
+                
+                if (mobileToggle) {
+                    mobileToggle.addEventListener('click', toggleDarkMode);
+                    console.log('✅ Mobile dark mode button listener added');
+                } else {
+                    console.error('❌ Mobile dark mode button not found');
+                }
+            } catch (error) {
+                console.error('❌ Error setting up dark mode listeners:', error);
+            }
+            
             // Form submissions
             document.getElementById("add-menu-item-form").addEventListener("submit", addMenuItem);
             document.getElementById("add-order-form").addEventListener("submit", addOrder);
@@ -628,7 +661,11 @@
         }
 
         function loadOrders() {
-            const ordersTable = document.getElementById("order-items");
+            const ordersTable = document.getElementById("orders-list");
+            if (!ordersTable) {
+                console.error('❌ Element orders-list not found');
+                return;
+            }
             ordersTable.innerHTML = "";
             
             orders.forEach(order => {
@@ -864,6 +901,54 @@
 
         // Google Calendar integration is now handled by the backend
         // No frontend calendar functions needed
+
+        // Dark mode functionality
+        function initDarkMode() {
+            // Check for saved theme preference or default to light mode
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+                document.documentElement.classList.add('dark');
+                updateDarkModeIcons(true);
+            } else {
+                document.documentElement.classList.remove('dark');
+                updateDarkModeIcons(false);
+            }
+        }
+
+        function toggleDarkMode() {
+            console.log('🔄 toggleDarkMode called');
+            const isDark = document.documentElement.classList.contains('dark');
+            console.log('Current mode:', isDark ? 'dark' : 'light');
+            
+            if (isDark) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                updateDarkModeIcons(false);
+                showNotification('Modo claro activado', 'info');
+                console.log('✅ Switched to light mode');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                updateDarkModeIcons(true);
+                showNotification('Modo oscuro activado', 'info');
+                console.log('✅ Switched to dark mode');
+            }
+        }
+
+        function updateDarkModeIcons(isDark) {
+            const desktopIcon = document.getElementById('dark-mode-icon');
+            const mobileIcon = document.getElementById('dark-mode-icon-mobile');
+            
+            if (isDark) {
+                desktopIcon.className = 'fas fa-sun';
+                mobileIcon.className = 'fas fa-sun';
+            } else {
+                desktopIcon.className = 'fas fa-moon';
+                mobileIcon.className = 'fas fa-moon';
+            }
+        }
 
         // Notification system
         function showNotification(message, type = 'info') {
