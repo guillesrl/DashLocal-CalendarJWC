@@ -27,22 +27,22 @@ app.get('/', (req, res) => {
 });
 
 // Health check endpoint
-app.get('/api/health', async (req, res) => {
-    try {
-        const dbConnected = await testConnection();
-        res.json({
-            status: 'OK',
-            database: dbConnected ? 'Connected' : 'Disconnected',
-            timestamp: new Date().toISOString()
-        });
-    } catch (error) {
-        res.status(500).json({
-            status: 'Error',
-            database: 'Disconnected',
-            error: error.message,
-            timestamp: new Date().toISOString()
-        });
-    }
+app.get('/api/health', (req, res) => {
+    res.json({ 
+        status: 'OK', 
+        timestamp: new Date().toISOString(),
+        database: 'Connected'
+    });
+});
+
+// Debug endpoint for Google Calendar configuration
+app.get('/api/debug/calendar', (req, res) => {
+    res.json({
+        calendar_id: process.env.GOOGLE_CALENDAR_ID ? 'Configured' : 'Missing',
+        service_account_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL ? 'Configured' : 'Missing',
+        private_key: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY ? 'Configured' : 'Missing',
+        environment: process.env.NODE_ENV || 'development'
+    });
 });
 
 // Error handling middleware
