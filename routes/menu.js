@@ -6,9 +6,10 @@ const router = express.Router();
 router.get('/', async (req, res) => {
     try {
         const { data, error } = await supabase
-            .from('menu')
-            .select('*')
-            .order('id');
+        .from('menu')
+        .select('*')
+        .filter('Precio', 'not.is', null)
+        .order('id');
         
         if (error) throw error;
         res.json(data);

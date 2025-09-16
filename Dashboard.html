@@ -192,9 +192,12 @@
                                 <tr>
                                     <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ID</th>
                                     <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Cliente</th>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Teléfono</th>
                                     <th class="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Dirección</th>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Items</th>
                                     <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total</th>
                                     <th class="hidden sm:table-cell px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Estado</th>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Hora</th>
                                     <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Acciones</th>
                                 </tr>
                             </thead>
@@ -645,7 +648,7 @@
                     <td class="px-3 md:px-6 py-4 whitespace-nowrap">${item.id}</td>
                     <td class="px-3 md:px-6 py-4 whitespace-nowrap">${item.Nombre || item.name || ''}</td>
                     <td class="hidden md:table-cell px-6 py-4">${item.Ingredientes || item.description || ''}</td>
-                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">$${parseFloat(item.Precio || item.price || 0).toFixed(2)}</td>
+                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">${(item.Precio || item.price) ? '$' + parseFloat(item.Precio || item.price || 0).toFixed(2) : ''}</td>
                     <td class="hidden sm:table-cell px-3 md:px-6 py-4 whitespace-nowrap capitalize">${formattedCategory}</td>
                     <td class="px-3 md:px-6 py-4 whitespace-nowrap">
                         <button onclick="editMenuItem(${item.id})" class="text-blue-600 hover:text-blue-800 mr-1 md:mr-2">
@@ -676,6 +679,8 @@
                 
                 row.innerHTML = `
                     <td class="px-3 md:px-6 py-4 whitespace-nowrap">${order.id}</td>
+                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">${order.nombre || 'N/A'}</td>
+                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">${order.telefono || 'N/A'}</td>
                     <td class="px-3 md:px-6 py-4 whitespace-nowrap">${order.direccion}</td>
                     <td class="hidden md:table-cell px-6 py-4">${items}</td>
                     <td class="px-3 md:px-6 py-4 whitespace-nowrap">$${parseFloat(order.total).toFixed(2)}</td>
