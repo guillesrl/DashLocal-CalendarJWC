@@ -9,7 +9,6 @@ router.get('/', async (req, res) => {
             .from('orders')
             .select('*')
             .order('created_at', { ascending: false });
-        
         if (error) throw error;
         res.json(data);
     } catch (error) {
@@ -21,18 +20,21 @@ router.get('/', async (req, res) => {
 // POST /api/orders - Crear nueva orden
 router.post('/', async (req, res) => {
     try {
-        const { direccion, items, total } = req.body;
-        
-        if (!direccion || !items || !total) {
-            return res.status(400).json({ error: 'Dirección, items y total son requeridos' });
+        const { direccion, items, total, nombre, telefono } = req.body;
+        if (!direccion || !items || !total || !nombre || !telefono) {
+            return res.status(400).json({ error: 'Dirección, items, total, nombre y teléfono son requeridos' });
         }
-
         const { data, error } = await supabase
             .from('orders')
-            .insert([{ direccion, items: JSON.stringify(items), total }])
+            .insert([{ 
+                direccion, 
+                items: JSON.stringify(items), 
+                total, 
+                nombre, 
+                telefono 
+            }])
             .select()
             .single();
-        
         if (error) throw error;
         res.status(201).json(data);
     } catch (error) {
@@ -45,8 +47,10 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { direccion, items, total, status } = req.body;
-
+        const { direccion, items, total, status, nombre, telefono } = req.body;
+        if (!direccion || !items || !total || !nombre || !telefono) {
+            return res.status(400).json({ error: 'Dirección, items, total, nombre y teléfono son requeridos' });
+        }
         const { data, error } = await supabase
             .from('orders')
             .update({ 
@@ -54,19 +58,19 @@ router.put('/:id', async (req, res) => {
                 items: JSON.stringify(items), 
                 total, 
                 status, 
+                nombre, 
+                telefono, 
                 updated_at: new Date().toISOString() 
             })
             .eq('id', id)
             .select()
             .single();
-
         if (error) {
             if (error.code === 'PGRST116') {
                 return res.status(404).json({ error: 'Orden no encontrada' });
             }
             throw error;
         }
-
         res.json(data);
     } catch (error) {
         console.error('Error actualizando orden:', error);
@@ -78,21 +82,18 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-
         const { data, error } = await supabase
             .from('orders')
             .delete()
             .eq('id', id)
             .select()
             .single();
-
         if (error) {
             if (error.code === 'PGRST116') {
                 return res.status(404).json({ error: 'Orden no encontrada' });
             }
             throw error;
         }
-
         res.json({ message: 'Orden eliminada correctamente' });
     } catch (error) {
         console.error('Error eliminando orden:', error);
