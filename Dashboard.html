@@ -987,5 +987,77 @@
         // PostgreSQL database operations are now handled by the backend API
         // All data persistence is managed through REST endpoints
     </script>
+<script>
+  async function loadReservationsFromCalendar() {
+    try {
+      const response = await fetch('/api/orders/today');
+      if (!response.ok) throw new Error('Failed to fetch reservations from calendar');
+      const events = await response.json();
+
+      // Transform Google Calendar events to reservation format
+      reservations = events.map(event => {
+        const start = event.start.dateTime || event.start.date;
+        const dateObj = new Date(start);
+        return {
+          id: event.id,
+          customer_name: event.summary || 'Sin nombre',
+          phone: '', // No phone info in calendar event
+          date: dateObj.toISOString().split('T')[0],
+          time: dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          people: event.attendees ? event.attendees.length : 1,
+          table_number: '', // No table info in calendar event
+        };
+      });
+
+      loadReservations();
+    } catch (error) {
+      console.error('Error loading reservations from calendar:', error);
+    }
+  }
+
+  // Override loadReservations to load from calendar
+  async function loadReservations() {
+    const reservationsTable = document.getElementById("reservation-items");
+    reservationsTable.innerHTML = "";
+
+    reservations.forEach(reservation => {
+      const row = document.createElement("tr");
+      const reservationDate = new Date(reservation.date).toLocaleDateString();
+      const reservationTime = reservation.time;
+
+      row.innerHTML = `
+        <td class="px-3 md:px-6 py-4 whitespace-nowrap">${reservation.id}</td>
+        <td class="px-3 md:px-6 py-4 whitespace-nowrap">${reservation.customer_name}</td>
+        <td class="hidden md:table-cell px-6 py-4 whitespace-nowrap">${reservation.phone}</td>
+        <td class="px-3 md:px-6 py-4 whitespace-nowrap">${reservationDate}</td>
+        <td class="px-3 md:px-6 py-4 whitespace-nowrap">${reservationTime}</td>
+        <td class="hidden sm:table-cell px-3 md:px-6 py-4 whitespace-nowrap">${reservation.people}</td>
+        <td class="hidden sm:table-cell px-3 md:px-6 py-4 whitespace-nowrap">${reservation.table_number}</td>
+        <td class="px-3 md:px-6 py-4 whitespace-nowrap">
+          <button onclick="editReservation('${reservation.id}')" class="text-blue-600 hover:text-blue-800 mr-1 md:mr-2">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button onclick="cancelReservation('${reservation.id}')" class="text-red-600 hover:text-red-800">
+            <i class="fas fa-trash"></i>
+          </button>
+        </td>
+      `;
+      reservationsTable.appendChild(row);
+    });
+  }
+
+  // Load reservations from calendar on page load and when showing reservations section
+  document.addEventListener("DOMContentLoaded", () => {
+    loadReservationsFromCalendar();
+  });
+
+  // Also reload reservations when the reservations section is shown
+  const reservationsNavLink = document.querySelector('a[onclick="showSection(\'reservations\')"]');
+  if (reservationsNavLink) {
+    reservationsNavLink.addEventListener('click', () => {
+      loadReservationsFromCalendar();
+    });
+  }
+</script>
 </body>
 </html>
