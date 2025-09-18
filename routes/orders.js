@@ -2,8 +2,10 @@ require('dotenv').config();
 const express = require('express');
 const { google } = require('googleapis');
 
-const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
+const credentialsPath = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH;
 
+// Usa require() para cargar el archivo JSON.
+const credentials = require('../credentials.json');
 const auth = new google.auth.GoogleAuth({
   credentials: credentials,
   scopes: ['https://www.googleapis.com/auth/calendar.readonly'],
