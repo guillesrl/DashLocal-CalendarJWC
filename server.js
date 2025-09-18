@@ -14,8 +14,7 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname)));
-
+app.use(express.static(path.join(__dirname, 'public')));
 // Routes
 app.use('/api/menu', menuRoutes);
 app.use('/api/orders', ordersRoutes);
@@ -23,7 +22,7 @@ app.use('/api/reservations', reservationsRoutes);
 
 // Servir el frontend
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'Dashboard.html'));
+    res.sendFile(path.join(__dirname, 'public', 'Dashboard.html'));
 });
 
 // Health check endpoint
