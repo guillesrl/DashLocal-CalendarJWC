@@ -54,3 +54,4 @@ service-account-key.json
 # Local Netlify folder
 .netlify
 .vercel
+credentials.json
