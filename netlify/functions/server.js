@@ -1,3 +1,11 @@
+console.log('GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY length:', process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY ? process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY.length : 'missing');
+console.log('GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY snippet:', process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY ? process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY.substring(0, 50) : 'missing');
+console.log('Vercel Environment Variables:', {
+  GOOGLE_SERVICE_ACCOUNT_EMAIL: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL ? 'set' : 'missing',
+  GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY ? 'set' : 'missing',
+  GOOGLE_CALENDAR_ID: process.env.GOOGLE_CALENDAR_ID ? 'set' : 'missing',
+  NODE_ENV: process.env.NODE_ENV
+});
 const serverless = require('serverless-http');
 const express = require('express');
 const cors = require('cors');
@@ -49,6 +57,10 @@ app.get('/api/health', async (req, res) => {
 app.use((err, req, res, next) => {
     console.error('Error no manejado:', err.stack);
     res.status(500).json({ error: 'Error interno del servidor' });
+app.use((err, req, res, next) => {
+    console.error('Unhandled error:', err);
+    res.status(500).json({ error: err.message, stack: err.stack });
+});
 });
 
 // 404 handler
@@ -56,4 +68,16 @@ app.use('*', (req, res) => {
     res.status(404).json({ error: 'Endpoint no encontrado' });
 });
 
+
+const GoogleCalendarBackendService = require('../../services/calendar-backend');
+
+app.get('/api/debug/calendar-init', async (req, res) => {
+    const calendarService = new GoogleCalendarBackendService();
+    try {
+        await calendarService.initialize();
+        res.json({ status: 'success', message: 'Google Calendar service initialized successfully' });
+    } catch (error) {
+        res.status(500).json({ status: 'error', message: error.message, stack: error.stack });
+    }
+});
 module.exports.handler = serverless(app);
