@@ -32,9 +32,16 @@ router.post('/', async (req, res) => {
         }
 
         // Insertar reserva en la base de datos
+        const reservationData = { customer_name, phone, date, time, people, table_number };
+        
+        // Solo agregar observations si está definido y la columna existe
+        if (observations !== undefined) {
+            reservationData.observations = observations;
+        }
+        
         const { data: reservation, error } = await supabase
             .from('reservations')
-            .insert([{ customer_name, phone, date, time, people, table_number, observations }])
+            .insert([reservationData])
             .select()
             .single();
         
@@ -84,19 +91,25 @@ router.put('/:id', async (req, res) => {
         }
 
         // Actualizar reserva en la base de datos
+        const updateData = { 
+            customer_name, 
+            phone, 
+            date, 
+            time, 
+            people, 
+            table_number, 
+            status,
+            updated_at: new Date().toISOString() 
+        };
+        
+        // Solo agregar observations si está definido
+        if (observations !== undefined) {
+            updateData.observations = observations;
+        }
+        
         const { data: updatedReservation, error } = await supabase
             .from('reservations')
-            .update({ 
-                customer_name, 
-                phone, 
-                date, 
-                time, 
-                people, 
-                table_number, 
-                status, 
-                observations,
-                updated_at: new Date().toISOString() 
-            })
+            .update(updateData)
             .eq('id', id)
             .select()
             .single();
