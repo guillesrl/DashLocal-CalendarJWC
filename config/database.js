@@ -5,16 +5,22 @@ require('dotenv').config();
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseKey) {
-    console.error('❌ Faltan variables de entorno de Supabase');
-    process.exit(1);
-}
+let supabase = null;
 
-// Crear cliente de Supabase
-const supabase = createClient(supabaseUrl, supabaseKey);
+if (!supabaseUrl || !supabaseKey) {
+    console.warn('⚠️ Variables de entorno de Supabase no configuradas');
+} else {
+    // Crear cliente de Supabase solo si las variables están disponibles
+    supabase = createClient(supabaseUrl, supabaseKey);
+}
 
 // Función para probar la conexión
 async function testConnection() {
+    if (!supabase) {
+        console.warn('⚠️ Cliente de Supabase no inicializado');
+        return false;
+    }
+    
     try {
         const { data, error } = await supabase
             .from('menu')

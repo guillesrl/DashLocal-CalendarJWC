@@ -2,14 +2,26 @@ require('dotenv').config();
 const express = require('express');
 const { google } = require('googleapis');
 
-const credentialsPath = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH;
+// Configure Google Auth using environment variables
+let auth = null;
 
-// Usa require() para cargar el archivo JSON.
-const credentials = require('../credentials.json');
-const auth = new google.auth.GoogleAuth({
-  credentials: credentials,
-  scopes: ['https://www.googleapis.com/auth/calendar.readonly'],
-});
+try {
+  if (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY) {
+    const credentials = {
+      client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      private_key: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    };
+    
+    auth = new google.auth.GoogleAuth({
+      credentials: credentials,
+      scopes: ['https://www.googleapis.com/auth/calendar.readonly'],
+    });
+  } else {
+    console.warn('⚠️ Google Calendar credentials not configured');
+  }
+} catch (error) {
+  console.error('❌ Error configuring Google Auth:', error.message);
+}
 
 const router = express.Router();
 const { supabase } = require('../config/database');
@@ -93,6 +105,13 @@ router.put('/:id', async (req, res) => {
 // GET /api/orders/today - Obtener reservas de hoy
 router.get('/today', async (req, res) => {
   try {
+    if (!auth) {
+      return res.status(503).json({ 
+        error: 'Google Calendar service not configured',
+        message: 'Please configure Google Calendar credentials'
+      });
+    }
+    
     const calendar = google.calendar('v3');
     const client = await auth.getClient();
 

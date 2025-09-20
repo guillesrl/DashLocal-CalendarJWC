@@ -55,12 +55,8 @@ app.get('/api/health', async (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-    console.error('Error no manejado:', err.stack);
-    res.status(500).json({ error: 'Error interno del servidor' });
-app.use((err, req, res, next) => {
     console.error('Unhandled error:', err);
     res.status(500).json({ error: err.message, stack: err.stack });
-});
 });
 
 // 404 handler
