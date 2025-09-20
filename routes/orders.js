@@ -2,11 +2,29 @@ require('dotenv').config();
 const express = require('express');
 const { google } = require('googleapis');
 
-// Configure Google Auth using environment variables
+// Configure Google Auth using credentials file or environment variables
 let auth = null;
 
 try {
-  if (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY) {
+  // First try to use credentials file if path is provided
+  if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH) {
+    const fs = require('fs');
+    const path = require('path');
+    const credentialsPath = path.resolve(__dirname, '..', process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH);
+    
+    if (fs.existsSync(credentialsPath)) {
+      console.log('📁 Loading Google credentials from file:', credentialsPath);
+      auth = new google.auth.GoogleAuth({
+        keyFile: credentialsPath,
+        scopes: ['https://www.googleapis.com/auth/calendar'],
+      });
+      console.log('✅ Google Calendar credentials loaded from file');
+    } else {
+      console.warn('⚠️ Credentials file not found:', credentialsPath);
+    }
+  }
+  // Fallback to environment variables
+  else if (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY) {
     const credentials = {
       client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
       private_key: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY.replace(/\\n/g, '\n'),
@@ -14,8 +32,9 @@ try {
     
     auth = new google.auth.GoogleAuth({
       credentials: credentials,
-      scopes: ['https://www.googleapis.com/auth/calendar.readonly'],
+      scopes: ['https://www.googleapis.com/auth/calendar'],
     });
+    console.log('✅ Google Calendar credentials loaded from environment variables');
   } else {
     console.warn('⚠️ Google Calendar credentials not configured');
   }

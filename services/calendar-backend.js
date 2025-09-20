@@ -98,8 +98,8 @@ class GoogleCalendarBackendService {
             console.log('📅 Evento creado:', { startDateTime, endDateTime, timeZone });
             
             const event = {
-                summary: `Reserva - ${reservation.customer_name}`,
-                description: `Mesa ${reservation.table_number} para ${reservation.people} personas.\nTeléfono: ${reservation.phone}\nID Reserva: ${reservation.id}`,
+                summary: `${reservation.customer_name} (${reservation.people} pax) Mesa ${reservation.table_number}`,
+                description: `Teléfono: ${reservation.phone || 'No especificado'}\n${reservation.observations ? `Observaciones: ${reservation.observations}` : ''}`,
                 start: {
                     dateTime: startDateTime,
                     timeZone: timeZone
@@ -189,8 +189,8 @@ class GoogleCalendarBackendService {
             const endDateTime = endTime.toISOString().split('T')[0] + 'T' + endTime.toTimeString().split(' ')[0];
             
             const event = {
-                summary: `Reserva - ${reservation.customer_name}`,
-                description: `Mesa ${reservation.table_number} para ${reservation.people} personas.\nTeléfono: ${reservation.phone}\nID Reserva: ${reservation.id}`,
+                summary: `${reservation.customer_name} (${reservation.people} pax) Mesa ${reservation.table_number}`,
+                description: `Teléfono: ${reservation.phone || 'No especificado'}\n${reservation.observations ? `Observaciones: ${reservation.observations}` : ''}`,
                 start: {
                     dateTime: startDateTime,
                     timeZone: timeZone

@@ -25,7 +25,7 @@ router.get('/', async (req, res) => {
 // POST /api/reservations - Crear nueva reserva
 router.post('/', async (req, res) => {
     try {
-        const { customer_name, phone, date, time, people, table_number } = req.body;
+        const { customer_name, phone, date, time, people, table_number, observations } = req.body;
         
         if (!customer_name || !date || !time || !people) {
             return res.status(400).json({ error: 'Nombre, fecha, hora y número de personas son requeridos' });
@@ -34,7 +34,7 @@ router.post('/', async (req, res) => {
         // Insertar reserva en la base de datos
         const { data: reservation, error } = await supabase
             .from('reservations')
-            .insert([{ customer_name, phone, date, time, people, table_number }])
+            .insert([{ customer_name, phone, date, time, people, table_number, observations }])
             .select()
             .single();
         
@@ -70,7 +70,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { customer_name, phone, date, time, people, table_number, status } = req.body;
+        const { customer_name, phone, date, time, people, table_number, status, observations } = req.body;
 
         // Obtener reserva actual
         const { data: currentReservation, error: fetchError } = await supabase
@@ -94,6 +94,7 @@ router.put('/:id', async (req, res) => {
                 people, 
                 table_number, 
                 status, 
+                observations,
                 updated_at: new Date().toISOString() 
             })
             .eq('id', id)

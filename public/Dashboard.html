@@ -361,6 +361,10 @@
                         <option value="5">Mesa 5</option>
                     </select>
                 </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Observaciones</label>
+                    <textarea name="observations" class="w-full px-3 py-2 border rounded" rows="3" placeholder="Alergias, preferencias especiales, etc."></textarea>
+                </div>
                 <div class="flex justify-end">
                     <button type="button" onclick="hideModal('add-reservation-modal')" class="mr-2 px-4 py-2 border rounded">Cancelar</button>
                     <button type="submit" class="bg-primary text-white px-4 py-2 rounded hover:bg-secondary transition">Guardar</button>
@@ -638,8 +642,11 @@
             
             upcomingReservations.forEach(reservation => {
                 const row = document.createElement("tr");
+                // Format customer name with person count in parentheses
+                const customerNameWithCount = `${reservation.customer_name} (${reservation.people} personas)`;
+                
                 row.innerHTML = `
-                    <td class="py-2">${reservation.customer_name}</td>
+                    <td class="py-2">${customerNameWithCount}</td>
                     <td class="py-2">${reservation.time}</td>
                     <td class="py-2">${reservation.people}</td>
                     <td class="py-2">${reservation.table_number}</td>
@@ -723,9 +730,15 @@
                 const reservationDate = new Date(reservation.date).toLocaleDateString();
                 const reservationTime = reservation.time;
                 
+                // Use Google Calendar event ID if available, otherwise fall back to database ID
+                const displayId = reservation.google_event_id || reservation.id;
+                
+                // Format customer name with person count in parentheses
+                const customerNameWithCount = `${reservation.customer_name} (${reservation.people} personas)`;
+                
                 row.innerHTML = `
-                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">${reservation.id}</td>
-                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">${reservation.customer_name}</td>
+                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">${displayId}</td>
+                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">${customerNameWithCount}</td>
                     <td class="hidden md:table-cell px-6 py-4 whitespace-nowrap">${reservation.phone}</td>
                     <td class="px-3 md:px-6 py-4 whitespace-nowrap">${reservationDate}</td>
                     <td class="px-3 md:px-6 py-4 whitespace-nowrap">${reservationTime}</td>
@@ -856,7 +869,8 @@
                 date: form.date.value,
                 time: form.time.value,
                 people: parseInt(form.people.value),
-                table_number: form.table.value
+                table_number: form.table.value,
+                observations: form.observations.value
             };
             
             try {
@@ -886,7 +900,8 @@
                 form.date.value = reservation.date;
                 form.time.value = reservation.time;
                 form.people.value = reservation.people;
-                form.table.value = reservation.table;
+                form.table.value = reservation.table_number;
+                form.observations.value = reservation.observations || '';
                 
                 // Change form to edit mode
                 form.dataset.editId = id;
@@ -1025,9 +1040,15 @@
       const reservationDate = new Date(reservation.date).toLocaleDateString();
       const reservationTime = reservation.time;
 
+      // Use Google Calendar event ID if available, otherwise fall back to database ID
+      const displayId = reservation.google_event_id || reservation.id;
+      
+      // Format customer name with person count in parentheses
+      const customerNameWithCount = `${reservation.customer_name} (${reservation.people} personas)`;
+
       row.innerHTML = `
-        <td class="px-3 md:px-6 py-4 whitespace-nowrap">${reservation.id}</td>
-        <td class="px-3 md:px-6 py-4 whitespace-nowrap">${reservation.customer_name}</td>
+        <td class="px-3 md:px-6 py-4 whitespace-nowrap">${displayId}</td>
+        <td class="px-3 md:px-6 py-4 whitespace-nowrap">${customerNameWithCount}</td>
         <td class="hidden md:table-cell px-6 py-4 whitespace-nowrap">${reservation.phone}</td>
         <td class="px-3 md:px-6 py-4 whitespace-nowrap">${reservationDate}</td>
         <td class="px-3 md:px-6 py-4 whitespace-nowrap">${reservationTime}</td>
