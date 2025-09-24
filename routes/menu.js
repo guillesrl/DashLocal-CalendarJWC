@@ -4,18 +4,33 @@ const router = express.Router();
 
 // GET /api/menu - Obtener todos los elementos del menú
 router.get('/', async (req, res) => {
+    console.log('Solicitud GET a /api/menu recibida');
     try {
-        const { data, error } = await supabase
-        .from('menu')
-        .select('*')
-        .filter('Precio', 'not.is', null)
-        .order('id');
+        if (!supabase) {
+            console.error('Error: Cliente de Supabase no inicializado');
+            return res.status(500).json({ error: 'Error de configuración del servidor' });
+        }
         
-        if (error) throw error;
+        console.log('Consultando la tabla de menú en Supabase...');
+        const { data, error } = await supabase
+            .from('menu')
+            .select('*')
+            .filter('Precio', 'not.is', null)
+            .order('id');
+        
+        if (error) {
+            console.error('Error en la consulta a Supabase:', error);
+            throw error;
+        }
+        
+        console.log(`Se encontraron ${data ? data.length : 0} elementos en el menú`);
         res.json(data);
     } catch (error) {
         console.error('Error obteniendo menú:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
+        res.status(500).json({ 
+            error: 'Error interno del servidor',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 });
 

@@ -50,9 +50,19 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: 'Error interno del servidor' });
 });
 
-// 404 handler
-app.use('*', (req, res) => {
-    res.status(404).json({ error: 'Endpoint no encontrado' });
+// Manejamos las rutas de API
+app.use('/api', (req, res, next) => {
+    // Si llegamos aquí es porque ninguna ruta de API coincidió
+    res.status(404).json({ error: 'Endpoint de API no encontrado' });
+});
+
+// Para cualquier otra ruta, servir el frontend
+app.use((req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'Dashboard.html'), (err) => {
+        if (err) {
+            res.status(404).send('Página no encontrada');
+        }
+    });
 });
 
 // Iniciar servidor

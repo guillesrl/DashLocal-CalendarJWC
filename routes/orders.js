@@ -48,12 +48,37 @@ const { supabase } = require('../config/database');
 // GET /api/orders - Obtener todas las órdenes
 router.get('/', async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const { date } = req.query;
+    let query = supabase
       .from('orders')
       .select('*')
       .order('created_at', { ascending: false });
+    
+    // Filtrar por fecha si se proporciona
+    if (date) {
+      const startOfDay = new Date(date);
+      const endOfDay = new Date(date);
+      endOfDay.setDate(endOfDay.getDate() + 1);
+      
+      query = query
+        .gte('created_at', startOfDay.toISOString())
+        .lt('created_at', endOfDay.toISOString());
+    }
+    
+    const { data, error } = await query;
+    
     if (error) throw error;
-    res.json(data);
+    
+    // Formatear los datos para el frontend
+    const formattedData = data.map(order => ({
+      ...order,
+      items: Array.isArray(order.items) ? order.items.join(', ') : order.items,
+      customer_name: order.nombre,
+      phone: order.telefono,
+      status: order.status || 'pendiente'
+    }));
+    
+    res.json({ data: formattedData });
   } catch (error) {
     console.error('Error obteniendo órdenes:', error);
     res.status(500).json({ error: 'Error interno del servidor' });

@@ -1,60 +1,65 @@
 const { google } = require('googleapis');
 const fs = require('fs');
 const path = require('path');
+const { JWT } = require('google-auth-library');
 
 class GoogleCalendarBackendService {
     constructor() {
         this.calendarId = process.env.GOOGLE_CALENDAR_ID;
         this.serviceAccountKeyPath = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH || './service-account-key.json';
         this.calendar = null;
-        this.auth = null;
+        this.jwtClient = null;
     }
 
     async initialize() {
         try {
-            let credentials;
-            
             console.log('🔧 Inicializando Google Calendar Service...');
-            console.log('📧 Service Account Email:', process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL);
             console.log('📅 Calendar ID:', this.calendarId);
             
-            // Intentar usar variables de entorno primero (para producción)
-            if (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY) {
-                credentials = {
-                    client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-                    private_key: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY.replace(/\\n/g, '\n')
-                };
-                console.log('✅ Usando credenciales de variables de entorno');
+            // Cargar credenciales
+            let credentials;
+            const keyFile = path.resolve(this.serviceAccountKeyPath);
+            
+            if (fs.existsSync(keyFile)) {
+                credentials = JSON.parse(fs.readFileSync(keyFile, 'utf8'));
+                console.log('✅ Credenciales cargadas desde:', keyFile);
             } else {
-                // Fallback a archivo local (para desarrollo)
-                const keyFile = path.resolve(this.serviceAccountKeyPath);
-                if (fs.existsSync(keyFile)) {
-                    credentials = JSON.parse(fs.readFileSync(keyFile, 'utf8'));
-                    console.log('✅ Usando credenciales de archivo local');
-                } else {
-                    throw new Error('No se encontraron credenciales de Google Calendar');
-                }
+                throw new Error('No se encontró el archivo de credenciales');
             }
-
+            
             // Configurar autenticación JWT
-            this.auth = new google.auth.JWT(
-                credentials.client_email,
-                null,
-                credentials.private_key,
-                ['https://www.googleapis.com/auth/calendar']
-            );
-
+            console.log('🔑 Configurando autenticación JWT...');
+            console.log('📧 Email de la cuenta de servicio:', credentials.client_email);
+            
+            // Crear cliente JWT
+            this.jwtClient = new JWT({
+                email: credentials.client_email,
+                key: credentials.private_key,
+                scopes: ['https://www.googleapis.com/auth/calendar'],
+                subject: credentials.client_email // Para la delegación de dominio (si es necesario)
+            });
+            
+            // Autenticar
+            console.log('🔐 Autenticando con Google...');
+            await this.jwtClient.authorize();
+            
             // Inicializar cliente de Calendar API
-            this.calendar = google.calendar({ version: 'v3', auth: this.auth });
+            console.log('🚀 Inicializando cliente de Calendar API...');
+            this.calendar = google.calendar({ version: 'v3', auth: this.jwtClient });
             
             // Probar la conexión
             try {
+                console.log('🔍 Probando conexión con el calendario...');
                 const calendarInfo = await this.calendar.calendars.get({
                     calendarId: this.calendarId
                 });
                 console.log('✅ Calendario encontrado:', calendarInfo.data.summary);
+                console.log('✅ Zona horaria del calendario:', calendarInfo.data.timeZone);
             } catch (calendarError) {
                 console.error('❌ Error accediendo al calendario:', calendarError.message);
+                if (calendarError.response) {
+                    console.error('Detalles del error:', calendarError.response.data);
+                }
                 throw new Error(`No se puede acceder al calendario: ${calendarError.message}`);
             }
             
@@ -68,11 +73,22 @@ class GoogleCalendarBackendService {
 
     async createEvent(reservation) {
         try {
-            console.log('🔄 Iniciando creación de evento para reserva:', reservation.id);
-            
             if (!this.calendar) {
-                console.log('📅 Inicializando servicio de calendario...');
                 await this.initialize();
+            }
+            
+            // Asegurarse de que el cliente JWT esté autenticado
+            if (this.jwtClient.credentials) {
+                console.log('🔑 Token de acceso válido hasta:', new Date(this.jwtClient.credentials.expiry_date));
+            } else {
+                console.log('🔐 Renovando token de acceso...');
+                await this.jwtClient.authorize();
+            }
+            
+            // Renovar token si es necesario
+            if (this.jwtClient.credentials.expiry_date < Date.now()) {
+                console.log('🔄 Renovando token de acceso...');
+                await this.jwtClient.authorize();
             }
 
             // Calcular tiempo de fin (1 hora después del inicio)
@@ -151,6 +167,12 @@ class GoogleCalendarBackendService {
             if (!this.calendar) {
                 await this.initialize();
             }
+            
+            // Renovar token si es necesario
+            if (this.jwtClient.credentials.expiry_date < Date.now()) {
+                console.log('🔄 Renovando token de acceso...');
+                await this.jwtClient.authorize();
+            }
 
             await this.calendar.events.delete({
                 calendarId: this.calendarId,
@@ -169,6 +191,12 @@ class GoogleCalendarBackendService {
         try {
             if (!this.calendar) {
                 await this.initialize();
+            }
+
+            // Renovar token si es necesario
+            if (this.jwtClient.credentials.expiry_date < Date.now()) {
+                console.log('🔄 Renovando token de acceso...');
+                await this.jwtClient.authorize();
             }
 
             // Usar la misma lógica de parsing que en createEvent para consistencia

@@ -1,7 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    "./Dashboard.html",
+    "./public/Dashboard.html",
     "./src/**/*.{html,js}",
     "./**/*.html"
   ],
@@ -9,9 +9,11 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: '#2563eb',
-        secondary: '#1e40af',
-        dark: '#1f2937'
+        primary: "#1a56db",
+        secondary: "#1e429f",
+        accent: "#e53e3e",
+        dark: "#111827",
+        light: "#f9fafb"
       }
     },
   },

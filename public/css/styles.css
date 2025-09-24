@@ -1,0 +1,38 @@
+/* Estilos generales para las secciones */
+.section-content {
+    display: none; /* Por defecto, todas las secciones están ocultas */
+}
+
+.section-content.active {
+    display: block; /* Solo la sección activa se muestra */
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Asegurarse de que las clases de Tailwind no interfieran */
+.hidden {
+    display: none !important;
+}
+
+/* Estilos para el modo oscuro */
+.dark .bg-white {
+    background-color: #1f2937; /* bg-gray-800 */
+    color: #f9fafb; /* text-gray-50 */
+}
+
+.dark .text-gray-900 {
+    color: #f9fafb; /* text-gray-50 */
+}
+
+/* Asegurar que los enlaces sean visibles en modo oscuro */
+.dark a {
+    color: #3b82f6; /* text-blue-500 */
+}
+
+.dark a:hover {
+    color: #60a5fa; /* text-blue-400 */
+}

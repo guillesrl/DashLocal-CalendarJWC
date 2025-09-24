@@ -1,28 +1,48 @@
 const express = require('express');
-const { supabase } = require('../config/database');
+const { google } = require('googleapis');
 const GoogleCalendarBackendService = require('../services/calendar-backend');
 const router = express.Router();
 
 const calendarService = new GoogleCalendarBackendService();
 
-// GET /api/reservations - Obtener todas las reservas
+// GET /api/reservations - Obtener todas las reservas (ahora obtiene eventos del calendario)
 router.get('/', async (req, res) => {
     try {
-        const { data, error } = await supabase
-            .from('reservations')
-            .select('*')
-            .order('date')
-            .order('time');
-        
-        if (error) throw error;
-        res.json(data);
+        if (!calendarService.calendar) {
+            await calendarService.initialize();
+        }
+
+        const timeMin = new Date().toISOString();
+        const timeMax = new Date();
+        timeMax.setDate(timeMax.getDate() + 30); // Obtener eventos para los próximos 30 días
+
+        const response = await calendarService.calendar.events.list({
+            calendarId: calendarService.calendarId,
+            timeMin: timeMin,
+            timeMax: timeMax.toISOString(),
+            singleEvents: true,
+            orderBy: 'startTime',
+        });
+
+        const events = response.data.items.map(event => ({
+            id: event.id,
+            title: event.summary,
+            start: event.start.dateTime || event.start.date,
+            end: event.end.dateTime || event.end.date,
+            description: event.description || '',
+            location: event.location || '',
+            status: event.status,
+            htmlLink: event.htmlLink
+        }));
+
+        res.json(events);
     } catch (error) {
-        console.error('Error obteniendo reservas:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
+        console.error('Error obteniendo eventos del calendario:', error);
+        res.status(500).json({ error: 'Error al obtener eventos del calendario', details: error.message });
     }
 });
 
-// POST /api/reservations - Crear nueva reserva
+// POST /api/reservations - Crear nueva reserva (ahora crea un evento en el calendario)
 router.post('/', async (req, res) => {
     try {
         const { customer_name, phone, date, time, people, table_number, observations } = req.body;
@@ -31,145 +51,180 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ error: 'Nombre, fecha, hora y número de personas son requeridos' });
         }
 
-        // Insertar reserva en la base de datos
-        const reservationData = { customer_name, phone, date, time, people, table_number };
-        
-        // Solo agregar observations si está definido y la columna existe
-        if (observations !== undefined) {
-            reservationData.observations = observations;
-        }
-        
-        const { data: reservation, error } = await supabase
-            .from('reservations')
-            .insert([reservationData])
-            .select()
-            .single();
-        
-        if (error) throw error;
+        // Crear objeto de reserva para el calendario
+        const reservationData = { 
+            customer_name, 
+            phone: phone || '', 
+            date, 
+            time, 
+            people, 
+            table_number: table_number || '',
+            observations: observations || ''
+        };
 
         // Crear evento en Google Calendar
-        try {
-            const calendarEvent = await calendarService.createEvent(reservation);
-            
-            // Actualizar reserva con el ID del evento de Google Calendar
-            const { error: updateError } = await supabase
-                .from('reservations')
-                .update({ google_event_id: calendarEvent.id })
-                .eq('id', reservation.id);
-            
-            if (!updateError) {
-                reservation.google_event_id = calendarEvent.id;
-            }
-        } catch (calendarError) {
-            console.error('Error creando evento de calendario:', calendarError);
-            // Continuar sin el evento de calendario
-        }
+        const calendarEvent = await calendarService.createEvent(reservationData);
+        
+        // Devolver el evento creado
+        const eventResponse = {
+            id: calendarEvent.id,
+            title: calendarEvent.summary,
+            start: calendarEvent.start.dateTime || calendarEvent.start.date,
+            end: calendarEvent.end.dateTime || calendarEvent.end.date,
+            description: calendarEvent.description,
+            htmlLink: calendarEvent.htmlLink,
+            ...reservationData
+        };
 
-        res.status(201).json(reservation);
+        res.status(201).json(eventResponse);
         
     } catch (error) {
         console.error('Error creando reserva:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
+        res.status(500).json({ 
+            error: 'Error al crear la reserva en el calendario', 
+            details: error.message 
+        });
     }
 });
 
-// PUT /api/reservations/:id - Actualizar reserva
+// PUT /api/reservations/:id - Actualizar reserva (ahora actualiza un evento en el calendario)
 router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const { customer_name, phone, date, time, people, table_number, status, observations } = req.body;
 
-        // Obtener reserva actual
-        const { data: currentReservation, error: fetchError } = await supabase
-            .from('reservations')
-            .select('*')
-            .eq('id', id)
-            .single();
-        
-        if (fetchError || !currentReservation) {
-            return res.status(404).json({ error: 'Reserva no encontrada' });
-        }
-
-        // Actualizar reserva en la base de datos
-        const updateData = { 
-            customer_name, 
-            phone, 
-            date, 
-            time, 
-            people, 
-            table_number, 
-            status,
-            updated_at: new Date().toISOString() 
-        };
-        
-        // Solo agregar observations si está definido
-        if (observations !== undefined) {
-            updateData.observations = observations;
-        }
-        
-        const { data: updatedReservation, error } = await supabase
-            .from('reservations')
-            .update(updateData)
-            .eq('id', id)
-            .select()
-            .single();
-
-        if (error) throw error;
-
-        // Actualizar evento en Google Calendar si existe
-        if (updatedReservation.google_event_id) {
-            try {
-                await calendarService.updateEvent(updatedReservation.google_event_id, updatedReservation);
-            } catch (calendarError) {
-                console.error('Error actualizando evento de calendario:', calendarError);
+        // Primero obtenemos el evento actual para verificar que existe
+        let event;
+        try {
+            const response = await calendarService.calendar.events.get({
+                calendarId: calendarService.calendarId,
+                eventId: id
+            });
+            event = response.data;
+        } catch (error) {
+            if (error.code === 404) {
+                return res.status(404).json({ error: 'Evento no encontrado en el calendario' });
             }
+            throw error;
         }
 
-        res.json(updatedReservation);
+        // Preparar datos actualizados
+        const updatedEvent = {
+            ...event,
+            summary: customer_name ? `${customer_name} (${people || 1} pax)${table_number ? ` Mesa ${table_number}` : ''}` : event.summary,
+            description: `Teléfono: ${phone || 'No especificado'}\n${observations ? `Observaciones: ${observations}` : ''}`,
+            start: {
+                dateTime: date && time ? new Date(`${date}T${time}`).toISOString() : event.start.dateTime,
+                timeZone: event.start.timeZone
+            },
+            end: {
+                dateTime: date && time ? new Date(new Date(`${date}T${time}`).getTime() + 60 * 60 * 1000).toISOString() : event.end.dateTime,
+                timeZone: event.end.timeZone
+            }
+        };
+
+        // Actualizar el evento en Google Calendar
+        const updatedEventResponse = await calendarService.calendar.events.update({
+            calendarId: calendarService.calendarId,
+            eventId: id,
+            resource: updatedEvent
+        });
+
+        res.json({
+            id: updatedEventResponse.data.id,
+            title: updatedEventResponse.data.summary,
+            start: updatedEventResponse.data.start.dateTime || updatedEventResponse.data.start.date,
+            end: updatedEventResponse.data.end.dateTime || updatedEventResponse.data.end.date,
+            description: updatedEventResponse.data.description,
+            htmlLink: updatedEventResponse.data.htmlLink,
+            customer_name,
+            phone,
+            date,
+            time,
+            people,
+            table_number,
+            observations
+        });
         
     } catch (error) {
         console.error('Error actualizando reserva:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
+        res.status(500).json({ 
+            error: 'Error al actualizar la reserva en el calendario',
+            details: error.message
+        });
     }
 });
 
-// DELETE /api/reservations/:id - Eliminar reserva
+// DELETE /api/reservations/:id - Eliminar reserva (ahora elimina un evento del calendario)
 router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
 
-        // Obtener reserva para obtener el ID del evento de Google Calendar
-        const { data: reservation, error: fetchError } = await supabase
-            .from('reservations')
-            .select('*')
-            .eq('id', id)
-            .single();
-        
-        if (fetchError || !reservation) {
-            return res.status(404).json({ error: 'Reserva no encontrada' });
-        }
-
-        // Eliminar evento de Google Calendar si existe
-        if (reservation.google_event_id) {
-            try {
-                await calendarService.deleteEvent(reservation.google_event_id);
-            } catch (calendarError) {
-                console.error('Error eliminando evento de calendario:', calendarError);
+        // Verificar que el evento existe
+        try {
+            await calendarService.calendar.events.get({
+                calendarId: calendarService.calendarId,
+                eventId: id
+            });
+        } catch (error) {
+            if (error.code === 404) {
+                return res.status(404).json({ error: 'Evento no encontrado en el calendario' });
             }
+            throw error;
         }
 
-        // Eliminar reserva de la base de datos
-        const { error } = await supabase
-            .from('reservations')
-            .delete()
-            .eq('id', id);
+        // Eliminar el evento de Google Calendar
+        await calendarService.calendar.events.delete({
+            calendarId: calendarService.calendarId,
+            eventId: id
+        });
 
-        if (error) throw error;
-        res.json({ message: 'Reserva eliminada correctamente' });
+        res.json({ message: 'Reserva eliminada correctamente del calendario' });
         
     } catch (error) {
         console.error('Error eliminando reserva:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
+        res.status(500).json({ 
+            error: 'Error al eliminar la reserva del calendario',
+            details: error.message
+        });
+    }
+});
+
+// Este endpoint ya no es necesario ya que el endpoint raíz (/) ahora devuelve los eventos del calendario
+// Se mantiene por compatibilidad con el frontend existente
+router.get('/calendar-events', async (req, res) => {
+    try {
+        if (!calendarService.calendar) {
+            await calendarService.initialize();
+        }
+
+        const timeMin = new Date().toISOString();
+        const timeMax = new Date();
+        timeMax.setDate(timeMax.getDate() + 30); // Obtener eventos para los próximos 30 días
+
+        const response = await calendarService.calendar.events.list({
+            calendarId: calendarService.calendarId,
+            timeMin: timeMin,
+            timeMax: timeMax.toISOString(),
+            singleEvents: true,
+            orderBy: 'startTime',
+        });
+
+        const events = response.data.items.map(event => ({
+            id: event.id,
+            title: event.summary,
+            start: event.start.dateTime || event.start.date,
+            end: event.end.dateTime || event.end.date,
+            description: event.description || '',
+            location: event.location || '',
+            status: event.status,
+            htmlLink: event.htmlLink
+        }));
+
+        res.json(events);
+    } catch (error) {
+        console.error('Error al obtener eventos del calendario:', error);
+        res.status(500).json({ error: 'Error al obtener eventos del calendario', details: error.message });
     }
 });
 

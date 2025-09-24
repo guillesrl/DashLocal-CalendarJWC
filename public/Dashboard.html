@@ -6,26 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Restaurant Dashboard</title>
     <meta name="description" content="Dashboard de gestión para restaurante con menú, pedidos y reservas">
-    <!-- Google Calendar Service -->
-    <script src="calendar-service.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        primary: "#1a56db",
-                        secondary: "#1e429f",
-                        accent: "#e53e3e",
-                        dark: "#111827",
-                        light: "#f9fafb"
-                    }
-                }
-            }
-        }
-    </script>
+    
+    <!-- Google Calendar API -->
+    <script src="https://apis.google.com/js/api.js"></script>
+    
+    <!-- App JS -->
+    <script src="js/app.js" defer></script>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 min-h-screen transition-colors duration-300">
     <!-- Mobile menu button -->
@@ -54,25 +42,25 @@
             <nav>
                 <ul class="space-y-2">
                     <li>
-                        <a href="#" onclick="showSection('dashboard')" class="flex items-center p-2 rounded hover:bg-secondary transition">
+                        <a href="#" data-section="dashboard" class="flex items-center p-2 rounded hover:bg-secondary transition nav-link">
                             <i class="fas fa-tachometer-alt mr-3"></i>
                             Dashboard
                         </a>
                     </li>
                     <li>
-                        <a href="#" onclick="showSection('menu')" class="flex items-center p-2 rounded hover:bg-secondary transition">
+                        <a href="#" data-section="menu" class="flex items-center p-2 rounded hover:bg-secondary transition nav-link">
                             <i class="fas fa-utensils mr-3"></i>
                             Menú
                         </a>
                     </li>
                     <li>
-                        <a href="#" onclick="showSection('orders')" class="flex items-center p-2 rounded hover:bg-secondary transition">
+                        <a href="#" data-section="orders" class="flex items-center p-2 rounded hover:bg-secondary transition nav-link">
                             <i class="fas fa-clipboard-list mr-3"></i>
                             Pedidos
                         </a>
                     </li>
                     <li>
-                        <a href="#" onclick="showSection('reservations')" class="flex items-center p-2 rounded hover:bg-secondary transition">
+                        <a href="#" data-section="reservations" class="flex items-center p-2 rounded hover:bg-secondary transition nav-link">
                             <i class="fas fa-calendar-alt mr-3"></i>
                             Reservas
                         </a>
@@ -87,7 +75,7 @@
         <!-- Main Content -->
         <main class="flex-1 p-4 md:p-8 w-full dark:text-white">
             <!-- Dashboard Section -->
-            <section id="dashboard" class="section-content">
+            <section id="dashboard" class="section-content active">
                 <h2 class="text-2xl font-bold mb-6">Resumen del Restaurante</h2>
                 
                 <div class="grid grid-cols-3 gap-2 md:gap-6 mb-6 md:mb-8">
@@ -106,6 +94,7 @@
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Sección de Pedidos Recientes -->
                     <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
                         <h3 class="text-lg font-semibold mb-4 dark:text-white">Pedidos Recientes</h3>
                         <div class="overflow-x-auto">
@@ -125,34 +114,38 @@
                         </div>
                     </div>
 
+
                     <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-                        <h3 class="text-lg font-semibold mb-4 dark:text-white">Próximas Reservas</h3>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full" id="upcoming-reservations">
-                                <thead>
-                                    <tr class="border-b">
-                                        <th class="text-left py-2">Nombre</th>
-                                        <th class="text-left py-2">Hora</th>
-                                        <th class="text-left py-2">Personas</th>
-                                        <th class="text-left py-2">Mesa</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Filled by JavaScript -->
-                                </tbody>
-                            </table>
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-semibold dark:text-white">Próximas Reservas</h3>
+                            <div class="flex space-x-2">
+                                <button onclick="loadCalendarEvents()" class="text-blue-500 hover:text-blue-700" title="Actualizar eventos">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                                <button onclick="syncWithGoogleCalendar()" class="text-green-500 hover:text-green-700" title="Sincronizar con Google Calendar">
+                                    <i class="fab fa-google"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="upcoming-events" class="space-y-3">
+                            <p class="text-gray-500 dark:text-gray-400">Cargando reservas...</p>
                         </div>
                     </div>
                 </div>
             </section>
 
             <!-- Menu Section -->
-            <section id="menu" class="section-content hidden">
+            <section id="menu" class="section-content">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold">Gestión de Menú</h2>
-                    <button onclick="showAddMenuItemModal()" class="bg-primary text-white px-4 py-2 rounded hover:bg-secondary transition">
-                        <i class="fas fa-plus mr-2"></i>Agregar Item
-                    </button>
+                    <div class="flex space-x-2">
+                        <button onclick="loadMenuItems()" class="flex items-center bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded transition" title="Recargar menú">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                        <button onclick="showAddMenuItemModal()" class="bg-primary hover:bg-secondary text-white px-4 py-2 rounded transition flex items-center">
+                            <i class="fas fa-plus mr-2"></i>Agregar Item
+                        </button>
+                    </div>
                 </div>
 
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
@@ -169,7 +162,11 @@
                                 </tr>
                             </thead>
                             <tbody id="menu-items" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                <!-- Menu items will be loaded here -->
+                                <tr id="loading-message">
+                                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                                        Cargando menú...
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -177,7 +174,7 @@
             </section>
 
             <!-- Orders Section -->
-            <section id="orders" class="section-content hidden">
+            <section id="orders" class="section-content">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold">Gestión de Pedidos</h2>
                     <button onclick="showAddOrderModal()" class="bg-primary text-white px-4 py-2 rounded hover:bg-secondary transition">
@@ -210,7 +207,7 @@
             </section>
 
             <!-- Reservations Section -->
-            <section id="reservations" class="section-content hidden">
+            <section id="reservations" class="section-content">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold">Gestión de Reservas</h2>
                     <button onclick="showAddReservationModal()" class="bg-primary text-white px-4 py-2 rounded hover:bg-secondary transition">
@@ -373,712 +370,30 @@
         </div>
     </div>
 
+    <!-- Google Calendar API Initialization -->
     <script>
-        // API configuration
-        const config = {
-            apiBaseUrl: '/api',
-            googleCalendar: {
-                calendarId: "2385d6833d1b3a264fea105c8e3b81c996a274bafe7f42ee742b92cccc783801@group.calendar.google.com"
-            }
-        };
-
-        // Data storage - now using PostgreSQL API
-        let menuItems = [];
-        let orders = [];
-        let reservations = [];
-
-        // API Helper functions
-        async function apiRequest(endpoint, options = {}) {
-            try {
-                const response = await fetch(`${config.apiBaseUrl}${endpoint}`, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...options.headers
-                    },
-                    ...options
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`API Error: ${response.statusText}`);
-                }
-                
-                return await response.json();
-            } catch (error) {
-                console.error('API Request failed:', error);
-                showNotification('Error de conexión con el servidor', 'error');
-                throw error;
+        // This script initializes the Google Calendar API
+        function loadGoogleCalendarAPI() {
+            if (typeof gapi !== 'undefined') {
+                gapi.load('client:auth2', initClient);
             }
         }
 
-        // Load data from PostgreSQL API
-        async function loadDataFromAPI() {
-            try {
-                const [menuData, ordersData, reservationsData] = await Promise.all([
-                    apiRequest('/menu'),
-                    apiRequest('/orders'),
-                    apiRequest('/reservations')
-                ]);
-                
-                menuItems = menuData;
-                orders = ordersData;
-                reservations = reservationsData;
-                
-                console.log('Datos cargados desde PostgreSQL:', { menuItems, orders, reservations });
-            } catch (error) {
-                console.error('Error cargando datos desde API:', error);
-                // Fallback to localStorage if API fails
-                loadFromLocalStorage();
-            }
-        }
-
-        // Fallback: Load from localStorage (for offline mode)
-        function loadFromLocalStorage() {
-            menuItems = JSON.parse(localStorage.getItem('menuItems')) || [];
-            orders = JSON.parse(localStorage.getItem('orders')) || [];
-            reservations = JSON.parse(localStorage.getItem('reservations')) || [];
-            console.log('Datos cargados desde localStorage (modo offline)');
-        }
-
-        // Save to localStorage as backup
-        function saveToLocalStorage() {
-            localStorage.setItem('menuItems', JSON.stringify(menuItems));
-            localStorage.setItem('orders', JSON.stringify(orders));
-            localStorage.setItem('reservations', JSON.stringify(reservations));
-        }
-
-        // Initialize the dashboard
-        document.addEventListener("DOMContentLoaded", async function() {
-            showSection('dashboard');
-            
-            // Load data from PostgreSQL API
-            await loadDataFromAPI();
-            
-            // Mobile menu hamburguesa
-            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebar-overlay');
-            
-            mobileMenuBtn.addEventListener('click', function() {
-                sidebar.classList.toggle('-translate-x-full');
-                overlay.classList.toggle('hidden');
-            });
-            
-            overlay.addEventListener('click', function() {
-                sidebar.classList.add('-translate-x-full');
-                overlay.classList.add('hidden');
-            });
-            
-            // Close mobile menu when clicking on navigation links
-            const navLinks = sidebar.querySelectorAll('a');
-            navLinks.forEach(link => {
-                link.addEventListener('click', function() {
-                    if (window.innerWidth < 768) {
-                        sidebar.classList.add('-translate-x-full');
-                        overlay.classList.add('hidden');
-                    }
-                });
-            });
-            
-            // Update UI with loaded data
-            loadDashboardStats();
-            loadMenuItems();
-            loadOrders();
-            loadReservations();
-            
-            // Initialize dark mode
-            initDarkMode();
-            
-            // Dark mode toggle event listeners with error handling
-            try {
-                const desktopToggle = document.getElementById('dark-mode-toggle');
-                const mobileToggle = document.getElementById('dark-mode-toggle-mobile');
-                
-                if (desktopToggle) {
-                    desktopToggle.addEventListener('click', toggleDarkMode);
-                    console.log('✅ Desktop dark mode button listener added');
-                } else {
-                    console.error('❌ Desktop dark mode button not found');
-                }
-                
-                if (mobileToggle) {
-                    mobileToggle.addEventListener('click', toggleDarkMode);
-                    console.log('✅ Mobile dark mode button listener added');
-                } else {
-                    console.error('❌ Mobile dark mode button not found');
-                }
-            } catch (error) {
-                console.error('❌ Error setting up dark mode listeners:', error);
-            }
-            
-            // Form submissions
-            document.getElementById("add-menu-item-form").addEventListener("submit", addMenuItem);
-            document.getElementById("add-order-form").addEventListener("submit", addOrder);
-            document.getElementById("add-reservation-form").addEventListener("submit", addReservation);
-        });
-
-        // Google Calendar is now handled by the backend
-        // No need for frontend calendar initialization
-
-        // Navigation functions
-        function showSection(sectionId) {
-            document.querySelectorAll(".section-content").forEach(section => {
-                section.classList.add("hidden");
-            });
-            document.getElementById(sectionId).classList.remove("hidden");
-            
-            // Load data for the specific section
-            switch(sectionId) {
-                case 'dashboard':
-                    loadDashboardStats();
-                    break;
-                case 'menu':
-                    loadMenuItems();
-                    break;
-                case 'orders':
-                    loadOrders();
-                    break;
-                case 'reservations':
-                    loadReservations();
-                    break;
-            }
-        }
-
-        // Modal functions
-        function showAddMenuItemModal() {
-            document.getElementById("add-menu-item-modal").classList.remove("hidden");
-        }
-
-        function showModal(modalId) {
-            document.getElementById(modalId).classList.remove("hidden");
-        }
-
-        function showAddReservationModal() {
-            showModal('add-reservation-modal');
-        }
-
-        function showAddOrderModal() {
-            showModal('add-order-modal');
-        }
-
-        async function addOrder(e) {
-            e.preventDefault();
-            const form = e.target;
-            const newOrder = {
-                direccion: form.direccion.value,
-                items: form.items.value.split(',').map(item => item.trim()),
-                total: parseFloat(form.total.value),
-                nombre: form.customer_name.value,
-                telefono: form.phone.value,
-                status: 'pendiente'
-            };
-            
-            try {
-                const createdOrder = await apiRequest('/orders', {
-                    method: 'POST',
-                    body: JSON.stringify(newOrder)
-                });
-                
-                orders.push(createdOrder);
-                saveToLocalStorage();
-                loadOrders();
-                loadDashboardStats();
-                hideModal('add-order-modal');
-                form.reset();
-                showNotification('Pedido creado exitosamente', 'success');
-            } catch (error) {
-                showNotification('Error al crear pedido', 'error');
-            }
-        }
-
-        function hideModal(modalId) {
-            document.getElementById(modalId).classList.add("hidden");
-        }
-
-        // Data loading functions
-        function loadDashboardStats() {
-            // Filter for today's data using local timezone (Europe/Madrid)
-            const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD format in local timezone
-            
-            const todayOrders = orders.filter(order => {
-                const orderDate = new Date(order.created_at).toLocaleDateString('en-CA');
-                return orderDate === today;
-            });
-            
-            const todayReservations = reservations.filter(reservation => {
-                const reservationDate = new Date(reservation.date).toLocaleDateString('en-CA');
-                return reservationDate === today;
-            });
-            
-            document.getElementById("today-orders").textContent = todayOrders.length;
-            document.getElementById("today-reservations").textContent = todayReservations.length;
-            document.getElementById("today-revenue").textContent = "$" + todayOrders.reduce((sum, order) => sum + parseFloat(order.total || 0), 0).toFixed(2);
-            
-            // Recent orders
-            const recentOrdersTable = document.getElementById("recent-orders").querySelector("tbody");
-            recentOrdersTable.innerHTML = "";
-            orders.slice(0, 5).forEach(order => {
-                const row = document.createElement("tr");
-                row.innerHTML = `
-                    <td class="py-2">${order.id}</td>
-                    <td class="py-2">${order.direccion}</td>
-                    <td class="py-2">$${parseFloat(order.total || 0).toFixed(2)}</td>
-                    <td class="py-2">
-                        <span class="px-2 py-1 rounded-full text-xs ${order.status === 'servido' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
-                            ${order.status}
-                        </span>
-                    </td>
-                `;
-                recentOrdersTable.appendChild(row);
-            });
-            
-            // Upcoming reservations (today and future)
-            const upcomingReservationsTable = document.getElementById("upcoming-reservations").querySelector("tbody");
-            upcomingReservationsTable.innerHTML = "";
-            
-            const upcomingReservations = reservations.filter(reservation => {
-                const reservationDate = new Date(reservation.date).toLocaleDateString('en-CA');
-                return reservationDate >= today;
-            }).slice(0, 5);
-            
-            upcomingReservations.forEach(reservation => {
-                const row = document.createElement("tr");
-                // Format customer name with person count in parentheses
-                const customerNameWithCount = `${reservation.customer_name} (${reservation.people} personas)`;
-                
-                row.innerHTML = `
-                    <td class="py-2">${customerNameWithCount}</td>
-                    <td class="py-2">${reservation.time}</td>
-                    <td class="py-2">${reservation.people}</td>
-                    <td class="py-2">${reservation.table_number}</td>
-                `;
-                upcomingReservationsTable.appendChild(row);
+        function initClient() {
+            gapi.client.init({
+                apiKey: 'YOUR_API_KEY',
+                clientId: 'YOUR_CLIENT_ID.apps.googleusercontent.com',
+                discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'],
+                scope: 'https://www.googleapis.com/auth/calendar.readonly'
+            }).then(function() {
+                console.log('Google Calendar API initialized');
+            }).catch(function(error) {
+                console.error('Error initializing Google Calendar API', error);
             });
         }
 
-        function loadMenuItems() {
-            const menuItemsTable = document.getElementById("menu-items");
-            menuItemsTable.innerHTML = "";
-            
-            menuItems.forEach(item => {
-                const row = document.createElement("tr");
-                const formattedCategory = (item.Categoría || item.category || '').replace('-', ' ');
-                row.innerHTML = `
-                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">${item.id}</td>
-                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">${item.Nombre || item.name || ''}</td>
-                    <td class="hidden md:table-cell px-6 py-4">${item.Ingredientes || item.description || ''}</td>
-                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">${(item.Precio || item.price) ? '$' + parseFloat(item.Precio || item.price || 0).toFixed(2) : ''}</td>
-                    <td class="hidden sm:table-cell px-3 md:px-6 py-4 whitespace-nowrap capitalize">${formattedCategory}</td>
-                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">
-                        <button onclick="editMenuItem(${item.id})" class="text-blue-600 hover:text-blue-800 mr-1 md:mr-2">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button onclick="deleteMenuItem(${item.id})" class="text-red-600 hover:text-red-800">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                `;
-                menuItemsTable.appendChild(row);
-            });
-        }
-
-        function loadOrders() {
-            const ordersTable = document.getElementById("orders-list");
-            if (!ordersTable) {
-                console.error('❌ Element orders-list not found');
-                return;
-            }
-            ordersTable.innerHTML = "";
-            
-            orders.forEach(order => {
-                const row = document.createElement("tr");
-                const items = Array.isArray(order.items) ? order.items.join(", ") : 
-                             (typeof order.items === 'string' ? JSON.parse(order.items).join(", ") : order.items);
-                const orderTime = order.created_at ? new Date(order.created_at).toLocaleTimeString() : 'N/A';
-                
-                row.innerHTML = `
-                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">${order.id}</td>
-                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">${order.nombre || 'N/A'}</td>
-                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">${order.telefono || 'N/A'}</td>
-                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">${order.direccion}</td>
-                    <td class="hidden md:table-cell px-6 py-4">${items}</td>
-                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">$${parseFloat(order.total).toFixed(2)}</td>
-                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">
-                        <span class="px-2 py-1 rounded-full text-xs ${order.status === 'servido' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
-                            ${order.status}
-                        </span>
-                    </td>
-                    <td class="hidden sm:table-cell px-3 md:px-6 py-4 whitespace-nowrap">${orderTime}</td>
-                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">
-                        <button onclick="updateOrderStatus(${order.id}, 'servido')" class="text-green-600 hover:text-green-800 mr-1 md:mr-2">
-                            <i class="fas fa-check"></i>
-                        </button>
-                        <button onclick="cancelOrder(${order.id})" class="text-red-600 hover:text-red-800">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </td>
-                `;
-                ordersTable.appendChild(row);
-            });
-        }
-
-        function loadReservations() {
-            const reservationsTable = document.getElementById("reservation-items");
-            reservationsTable.innerHTML = "";
-            
-            reservations.forEach(reservation => {
-                const row = document.createElement("tr");
-                const reservationDate = new Date(reservation.date).toLocaleDateString();
-                const reservationTime = reservation.time;
-                
-                // Use Google Calendar event ID if available, otherwise fall back to database ID
-                const displayId = reservation.google_event_id || reservation.id;
-                
-                // Format customer name with person count in parentheses
-                const customerNameWithCount = `${reservation.customer_name} (${reservation.people} personas)`;
-                
-                row.innerHTML = `
-                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">${displayId}</td>
-                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">${customerNameWithCount}</td>
-                    <td class="hidden md:table-cell px-6 py-4 whitespace-nowrap">${reservation.phone}</td>
-                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">${reservationDate}</td>
-                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">${reservationTime}</td>
-                    <td class="hidden sm:table-cell px-3 md:px-6 py-4 whitespace-nowrap">${reservation.people}</td>
-                    <td class="hidden sm:table-cell px-3 md:px-6 py-4 whitespace-nowrap">${reservation.table_number}</td>
-                    <td class="px-3 md:px-6 py-4 whitespace-nowrap">
-                        <button onclick="editReservation(${reservation.id})" class="text-blue-600 hover:text-blue-800 mr-1 md:mr-2">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button onclick="cancelReservation(${reservation.id})" class="text-red-600 hover:text-red-800">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                `;
-                reservationsTable.appendChild(row);
-            });
-        }
-
-        // CRUD operations
-        async function addMenuItem(e) {
-            e.preventDefault();
-            const form = e.target;
-            const newItem = {
-                Nombre: form.name.value,
-                Ingredientes: form.description.value,
-                Precio: parseFloat(form.price.value),
-                Categoría: form.category.value
-            };
-            
-            try {
-                const createdItem = await apiRequest('/menu', {
-                    method: 'POST',
-                    body: JSON.stringify(newItem)
-                });
-                
-                menuItems.push(createdItem);
-                saveToLocalStorage();
-                loadMenuItems();
-                hideModal('add-menu-item-modal');
-                form.reset();
-                showNotification('Elemento del menú agregado exitosamente', 'success');
-            } catch (error) {
-                showNotification('Error al agregar elemento del menú', 'error');
-            }
-        }
-
-        function editMenuItem(id) {
-            const item = menuItems.find(item => item.id === id);
-            if (item) {
-                const form = document.getElementById("add-menu-item-form");
-                form.name.value = item.Nombre || item.name || '';
-                form.description.value = item.Ingredientes || item.description || '';
-                form.price.value = item.Precio || item.price || '';
-                form.category.value = item.Categoría || item.category || '';
-                
-                // Change form to edit mode
-                form.dataset.editId = id;
-                form.querySelector("button[type='submit']").textContent = "Actualizar";
-                
-                showAddMenuItemModal();
-            }
-        }
-
-        async function deleteMenuItem(id) {
-            if (confirm("¿Estás seguro de que quieres eliminar este item del menú?")) {
-                try {
-                    await apiRequest(`/menu/${id}`, { method: 'DELETE' });
-                    
-                    const index = menuItems.findIndex(item => item.id === id);
-                    if (index !== -1) {
-                        menuItems.splice(index, 1);
-                        saveToLocalStorage();
-                        loadMenuItems();
-                        showNotification('Elemento del menú eliminado exitosamente', 'success');
-                    }
-                } catch (error) {
-                    showNotification('Error al eliminar elemento del menú', 'error');
-                }
-            }
-        }
-
-        async function updateOrderStatus(id, status) {
-            try {
-                const order = orders.find(order => order.id === id);
-                if (order) {
-                    const updatedOrder = { ...order, status };
-                    await apiRequest(`/orders/${id}`, {
-                        method: 'PUT',
-                        body: JSON.stringify(updatedOrder)
-                    });
-                    
-                    order.status = status;
-                    saveToLocalStorage();
-                    loadOrders();
-                    loadDashboardStats();
-                    showNotification('Estado de orden actualizado', 'success');
-                }
-            } catch (error) {
-                showNotification('Error al actualizar estado de orden', 'error');
-            }
-        }
-
-        async function cancelOrder(id) {
-            if (confirm("¿Estás seguro de que quieres cancelar este pedido?")) {
-                try {
-                    await apiRequest(`/orders/${id}`, { method: 'DELETE' });
-                    
-                    const index = orders.findIndex(order => order.id === id);
-                    if (index !== -1) {
-                        orders.splice(index, 1);
-                        saveToLocalStorage();
-                        loadOrders();
-                        loadDashboardStats();
-                        showNotification('Orden cancelada exitosamente', 'success');
-                    }
-                } catch (error) {
-                    showNotification('Error al cancelar orden', 'error');
-                }
-            }
-        }
-
-        async function addReservation(e) {
-            e.preventDefault();
-            const form = e.target;
-            const newReservation = {
-                customer_name: form.customer_name.value,
-                phone: form.phone.value,
-                date: form.date.value,
-                time: form.time.value,
-                people: parseInt(form.people.value),
-                table_number: form.table.value,
-                observations: form.observations.value
-            };
-            
-            try {
-                const createdReservation = await apiRequest('/reservations', {
-                    method: 'POST',
-                    body: JSON.stringify(newReservation)
-                });
-                
-                reservations.push(createdReservation);
-                saveToLocalStorage();
-                loadReservations();
-                loadDashboardStats();
-                hideModal('add-reservation-modal');
-                form.reset();
-                showNotification('Reserva creada exitosamente y sincronizada con Google Calendar', 'success');
-            } catch (error) {
-                showNotification('Error al crear reserva', 'error');
-            }
-        }
-
-        function editReservation(id) {
-            const reservation = reservations.find(r => r.id === id);
-            if (reservation) {
-                const form = document.getElementById("add-reservation-form");
-                form.customer_name.value = reservation.customer_name;
-                form.phone.value = reservation.phone;
-                form.date.value = reservation.date;
-                form.time.value = reservation.time;
-                form.people.value = reservation.people;
-                form.table.value = reservation.table_number;
-                form.observations.value = reservation.observations || '';
-                
-                // Change form to edit mode
-                form.dataset.editId = id;
-                form.querySelector("button[type='submit']").textContent = "Actualizar";
-                
-                showAddReservationModal();
-            }
-        }
-
-        async function cancelReservation(id) {
-            if (confirm("¿Estás seguro de que quieres cancelar esta reserva?")) {
-                try {
-                    await apiRequest(`/reservations/${id}`, { method: 'DELETE' });
-                    
-                    const index = reservations.findIndex(r => r.id === id);
-                    if (index !== -1) {
-                        reservations.splice(index, 1);
-                        saveToLocalStorage();
-                        loadReservations();
-                        loadDashboardStats();
-                        showNotification('Reserva cancelada exitosamente y eliminada de Google Calendar', 'success');
-                    }
-                } catch (error) {
-                    showNotification('Error al cancelar reserva', 'error');
-                }
-            }
-        }
-
-        // Google Calendar integration is now handled by the backend
-        // No frontend calendar functions needed
-
-        // Dark mode functionality
-        function initDarkMode() {
-            // Check for saved theme preference or default to light mode
-            const savedTheme = localStorage.getItem('theme');
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            
-            if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
-                document.documentElement.classList.add('dark');
-                updateDarkModeIcons(true);
-            } else {
-                document.documentElement.classList.remove('dark');
-                updateDarkModeIcons(false);
-            }
-        }
-
-        function toggleDarkMode() {
-            console.log('🔄 toggleDarkMode called');
-            const isDark = document.documentElement.classList.contains('dark');
-            console.log('Current mode:', isDark ? 'dark' : 'light');
-            
-            if (isDark) {
-                document.documentElement.classList.remove('dark');
-                localStorage.setItem('theme', 'light');
-                updateDarkModeIcons(false);
-                showNotification('Modo claro activado', 'info');
-                console.log('✅ Switched to light mode');
-            } else {
-                document.documentElement.classList.add('dark');
-                localStorage.setItem('theme', 'dark');
-                updateDarkModeIcons(true);
-                showNotification('Modo oscuro activado', 'info');
-                console.log('✅ Switched to dark mode');
-            }
-        }
-
-        function updateDarkModeIcons(isDark) {
-            const desktopIcon = document.getElementById('dark-mode-icon');
-            const mobileIcon = document.getElementById('dark-mode-icon-mobile');
-            
-            if (isDark) {
-                desktopIcon.className = 'fas fa-sun';
-                mobileIcon.className = 'fas fa-sun';
-            } else {
-                desktopIcon.className = 'fas fa-moon';
-                mobileIcon.className = 'fas fa-moon';
-            }
-        }
-
-        // Notification system
-        function showNotification(message, type = 'info') {
-            const notification = document.createElement('div');
-            notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
-                type === 'success' ? 'bg-green-500 text-white' :
-                type === 'error' ? 'bg-red-500 text-white' :
-                type === 'warning' ? 'bg-yellow-500 text-black' :
-                'bg-blue-500 text-white'
-            }`;
-            notification.textContent = message;
-            
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.remove();
-            }, 5000);
-        }
-
-        // PostgreSQL database operations are now handled by the backend API
-        // All data persistence is managed through REST endpoints
+        // Load the Google Calendar API when the page loads
+        document.addEventListener('DOMContentLoaded', loadGoogleCalendarAPI);
     </script>
-<script>
-  async function loadReservationsFromCalendar() {
-    try {
-      const response = await fetch('/api/orders/today');
-      if (!response.ok) throw new Error('Failed to fetch reservations from calendar');
-      const events = await response.json();
-
-      // Transform Google Calendar events to reservation format
-      reservations = events.map(event => {
-        const start = event.start.dateTime || event.start.date;
-        const dateObj = new Date(start);
-        return {
-          id: event.id,
-          customer_name: event.summary || 'Sin nombre',
-          phone: '', // No phone info in calendar event
-          date: dateObj.toISOString().split('T')[0],
-          time: dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          people: event.attendees ? event.attendees.length : 1,
-          table_number: '', // No table info in calendar event
-        };
-      });
-
-      loadReservations();
-    } catch (error) {
-      console.error('Error loading reservations from calendar:', error);
-    }
-  }
-
-  // Override loadReservations to load from calendar
-  async function loadReservations() {
-    const reservationsTable = document.getElementById("reservation-items");
-    reservationsTable.innerHTML = "";
-
-    reservations.forEach(reservation => {
-      const row = document.createElement("tr");
-      const reservationDate = new Date(reservation.date).toLocaleDateString();
-      const reservationTime = reservation.time;
-
-      // Use Google Calendar event ID if available, otherwise fall back to database ID
-      const displayId = reservation.google_event_id || reservation.id;
-      
-      // Format customer name with person count in parentheses
-      const customerNameWithCount = `${reservation.customer_name} (${reservation.people} personas)`;
-
-      row.innerHTML = `
-        <td class="px-3 md:px-6 py-4 whitespace-nowrap">${displayId}</td>
-        <td class="px-3 md:px-6 py-4 whitespace-nowrap">${customerNameWithCount}</td>
-        <td class="hidden md:table-cell px-6 py-4 whitespace-nowrap">${reservation.phone}</td>
-        <td class="px-3 md:px-6 py-4 whitespace-nowrap">${reservationDate}</td>
-        <td class="px-3 md:px-6 py-4 whitespace-nowrap">${reservationTime}</td>
-        <td class="hidden sm:table-cell px-3 md:px-6 py-4 whitespace-nowrap">${reservation.people}</td>
-        <td class="hidden sm:table-cell px-3 md:px-6 py-4 whitespace-nowrap">${reservation.table_number}</td>
-        <td class="px-3 md:px-6 py-4 whitespace-nowrap">
-          <button onclick="editReservation('${reservation.id}')" class="text-blue-600 hover:text-blue-800 mr-1 md:mr-2">
-            <i class="fas fa-edit"></i>
-          </button>
-          <button onclick="cancelReservation('${reservation.id}')" class="text-red-600 hover:text-red-800">
-            <i class="fas fa-trash"></i>
-          </button>
-        </td>
-      `;
-      reservationsTable.appendChild(row);
-    });
-  }
-
-  // Load reservations from calendar on page load and when showing reservations section
-  document.addEventListener("DOMContentLoaded", () => {
-    loadReservationsFromCalendar();
-  });
-
-  // Also reload reservations when the reservations section is shown
-  const reservationsNavLink = document.querySelector('a[onclick="showSection(\'reservations\')"]');
-  if (reservationsNavLink) {
-    reservationsNavLink.addEventListener('click', () => {
-      loadReservationsFromCalendar();
-    });
-  }
-</script>
 </body>
 </html>
