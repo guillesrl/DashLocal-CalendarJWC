@@ -9,9 +9,6 @@
     <link rel="stylesheet" href="/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     
-    <!-- Google Calendar API -->
-    <script src="https://apis.google.com/js/api.js"></script>
-    
     <!-- App JS -->
     <script src="js/app.js" defer></script>
 </head>
@@ -42,25 +39,25 @@
             <nav>
                 <ul class="space-y-2">
                     <li>
-                        <a href="#" data-section="dashboard" class="flex items-center p-2 rounded hover:bg-secondary transition nav-link">
+                        <a href="#" data-section="dashboard" class="flex items-center p-2 rounded hover:bg-secondary transition nav-link text-white dark:text-white">
                             <i class="fas fa-tachometer-alt mr-3"></i>
                             Dashboard
                         </a>
                     </li>
                     <li>
-                        <a href="#" data-section="menu" class="flex items-center p-2 rounded hover:bg-secondary transition nav-link">
+                        <a href="#" data-section="menu" class="flex items-center p-2 rounded hover:bg-secondary transition nav-link text-white dark:text-white">
                             <i class="fas fa-utensils mr-3"></i>
                             Menú
                         </a>
                     </li>
                     <li>
-                        <a href="#" data-section="orders" class="flex items-center p-2 rounded hover:bg-secondary transition nav-link">
+                        <a href="#" data-section="orders" class="flex items-center p-2 rounded hover:bg-secondary transition nav-link text-white dark:text-white">
                             <i class="fas fa-clipboard-list mr-3"></i>
                             Pedidos
                         </a>
                     </li>
                     <li>
-                        <a href="#" data-section="reservations" class="flex items-center p-2 rounded hover:bg-secondary transition nav-link">
+                        <a href="#" data-section="reservations" class="flex items-center p-2 rounded hover:bg-secondary transition nav-link text-white dark:text-white">
                             <i class="fas fa-calendar-alt mr-3"></i>
                             Reservas
                         </a>
@@ -370,30 +367,6 @@
         </div>
     </div>
 
-    <!-- Google Calendar API Initialization -->
-    <script>
-        // This script initializes the Google Calendar API
-        function loadGoogleCalendarAPI() {
-            if (typeof gapi !== 'undefined') {
-                gapi.load('client:auth2', initClient);
-            }
-        }
-
-        function initClient() {
-            gapi.client.init({
-                apiKey: 'YOUR_API_KEY',
-                clientId: 'YOUR_CLIENT_ID.apps.googleusercontent.com',
-                discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'],
-                scope: 'https://www.googleapis.com/auth/calendar.readonly'
-            }).then(function() {
-                console.log('Google Calendar API initialized');
-            }).catch(function(error) {
-                console.error('Error initializing Google Calendar API', error);
-            });
-        }
-
-        // Load the Google Calendar API when the page loads
-        document.addEventListener('DOMContentLoaded', loadGoogleCalendarAPI);
-    </script>
+    <!-- Scripts de inicialización de la aplicación se cargan desde app.js -->
 </body>
 </html>

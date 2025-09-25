@@ -206,16 +206,30 @@ async function loadDashboardStats() {
         const todayRevenue = todayOrders.reduce((sum, order) => sum + (parseFloat(order.total) || 0), 0);
         document.getElementById('today-revenue').textContent = `$${todayRevenue.toFixed(2)}`;
         
-        // Load today's reservations
-        const reservationsResponse = await apiRequest(`/reservations?date=${today}`);
-        const todayReservations = reservationsResponse.data || [];
-        document.getElementById('today-reservations').textContent = todayReservations.length;
-        
         // Update recent orders table
         updateRecentOrdersTable(todayOrders.slice(0, 5));
         
-        // Update upcoming reservations table
-        updateUpcomingReservationsTable(todayReservations.slice(0, 5));
+        // Load calendar events for today
+        const now = new Date();
+        const endOfDay = new Date(now);
+        endOfDay.setHours(23, 59, 59, 999);
+        
+        console.log('Cargando eventos del calendario...');
+        console.log('Rango de fechas:', {
+            desde: now.toISOString(),
+            hasta: endOfDay.toISOString()
+        });
+        
+        const response = await apiRequest(`/reservations/calendar-events?timeMin=${encodeURIComponent(now.toISOString())}&timeMax=${encodeURIComponent(endOfDay.toISOString())}`);
+        const events = Array.isArray(response) ? response : [];
+        
+        console.log('Eventos recibidos:', events);
+        
+        // Update today's reservations count
+        document.getElementById('today-reservations').textContent = events.length;
+        
+        // Update upcoming reservations table with calendar events
+        updateUpcomingReservationsTable(events);
         
     } catch (error) {
         console.error('Error loading dashboard stats:', error);
@@ -245,22 +259,169 @@ function updateRecentOrdersTable(orders) {
     });
 }
 
-function updateUpcomingReservationsTable(reservations) {
-    const tbody = document.querySelector('#upcoming-reservations tbody');
-    if (!tbody) return;
+// Función para procesar un evento individual
+function parseEvent(event) {
+    try {
+        console.log('Procesando evento:', event);
+        
+        // Obtener título y descripción
+        const title = event.summary || 'Reserva sin título';
+        const description = event.description || '';
+        
+        // Manejo de fechas
+        let startTime, dateString = 'Hora no disponible';
+        
+        if (event.start) {
+            startTime = event.start.dateTime ? new Date(event.start.dateTime) : 
+                      (event.start.date ? new Date(event.start.date) : null);
+            
+            if (startTime && !isNaN(startTime.getTime())) {
+                dateString = startTime.toLocaleTimeString('es-ES', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+            }
+        }
+        
+        // Extraer información del título (formato: "Nombre (X pax)")
+        const titleMatch = title.match(/(.*?)\s*\((\d+)\s*pax\)/i) || [];
+        const customerName = (titleMatch[1] || title).trim();
+        const people = titleMatch[2] ? parseInt(titleMatch[2], 10) : 1;
+        
+        // Extraer número de mesa de la descripción
+        const tableMatch = description.match(/Mesa:\s*(\d+|S\/N)/i);
+        const table = tableMatch ? tableMatch[1] : 'N/A';
+        
+        return {
+            customerName,
+            time: dateString,
+            people,
+            table,
+            htmlLink: event.htmlLink || '#'
+        };
+        
+    } catch (error) {
+        console.error('Error al procesar el evento:', error, event);
+        return {
+            customerName: 'Error al cargar',
+            time: '--:--',
+            people: 0,
+            table: 'N/A',
+            htmlLink: '#'
+        };
+    }
+}
+
+function updateUpcomingReservationsTable(events) {
+    const container = document.getElementById('upcoming-events');
+    if (!container) {
+        console.error('No se encontró el contenedor de eventos');
+        return;
+    }
     
-    tbody.innerHTML = '';
+    console.log('Eventos recibidos para mostrar:', events);
     
-    reservations.forEach(reservation => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td class="py-2">${reservation.customer_name || 'Cliente'}</td>
-            <td class="py-2">${formatTime(reservation.time)}</td>
-            <td class="py-2">${reservation.people || 1}</td>
-            <td class="py-2">${reservation.table || 'N/A'}</td>
-        `;
-        tbody.appendChild(row);
-    });
+    // Mostrar mensaje si no hay eventos
+    if (!Array.isArray(events) || events.length === 0) {
+        container.innerHTML = '<p class="text-gray-500 dark:text-gray-400 py-4">No hay reservas para hoy</p>';
+        return;
+    }
+    
+    // Función para obtener el timestamp de un evento
+    const getEventTime = (event) => {
+        // Manejar diferentes formatos de fecha de inicio
+        if (event.start?.dateTime) return new Date(event.start.dateTime).getTime();
+        if (event.start?.date) return new Date(event.start.date).getTime();
+        if (event.start) return new Date(event.start).getTime();
+        return 0;
+    };
+    
+    // Ordenar eventos por hora de inicio
+    const sortedEvents = [...events].sort((a, b) => getEventTime(a) - getEventTime(b));
+    
+    // Procesar cada evento (máximo 5)
+    const eventsHTML = sortedEvents.slice(0, 5).map(event => {
+        try {
+            console.log('Procesando evento:', event);
+            
+            // Extraer información básica
+            const title = event.summary || event.title || 'Reserva';
+            const description = event.description || '';
+            
+            // Obtener la hora de inicio en el formato correcto
+            let timeStr = '--:--';
+            const startTime = event.start?.dateTime || event.start?.date || event.start;
+            
+            if (startTime) {
+                try {
+                    const date = new Date(startTime);
+                    if (!isNaN(date.getTime())) {
+                        const hours = String(date.getHours()).padStart(2, '0');
+                        const minutes = String(date.getMinutes()).padStart(2, '0');
+                        timeStr = `${hours}:${minutes}`;
+                    }
+                } catch (error) {
+                    console.error('Error al formatear la hora:', error);
+                }
+            }
+            
+            // Extraer número de personas (de título o descripción)
+            let people = '1';
+            const peopleMatch = title.match(/\((\d+)\s*pax\)/i) || 
+                              description.match(/(\d+)\s*(personas?|pax|comensales?)/i);
+            if (peopleMatch) {
+                people = peopleMatch[1];
+            }
+            
+            // Extraer número de mesa (de descripción)
+            let table = 'N/A';
+            const tableMatch = description.match(/Mesa[\s:]*([^\s<]+)/i) || 
+                             description.match(/Mesa\s*(\d+|S\/N)/i);
+            if (tableMatch) {
+                table = tableMatch[1].replace(/[^\d\/A-Z]+/gi, ''); // Limpiar el texto
+            }
+            
+            // Limpiar el nombre del cliente
+            let customerName = title
+                .replace(/\(\d+\s*pax\)/i, '') // Eliminar (X pax)
+                .replace(/\d+/g, '') // Eliminar números sueltos
+                .replace(/\s+/g, ' ') // Eliminar espacios múltiples
+                .trim();
+                
+            if (!customerName) customerName = 'Reserva sin nombre';
+            
+            // Crear HTML del evento
+            return `
+                <div class="border-b border-gray-200 dark:border-gray-700 py-3">
+                    <div class="flex justify-between items-center">
+                        <div class="min-w-0">
+                            <h4 class="font-medium text-gray-900 dark:text-white truncate">${customerName}</h4>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 flex flex-wrap items-center">
+                                <span class="flex items-center mr-3">
+                                    <i class="far fa-clock mr-1"></i>${timeStr}
+                                </span>
+                                <span class="flex items-center mr-3">
+                                    <i class="fas fa-users mr-1"></i>${people}
+                                </span>
+                                <span class="flex items-center">
+                                    <i class="fas fa-utensils mr-1"></i>Mesa ${table}
+                                </span>
+                            </p>
+                        </div>
+                        ${event.htmlLink ? `
+                        <a href="${event.htmlLink}" target="_blank" class="ml-2 text-blue-500 hover:text-blue-700 flex-shrink-0" title="Ver en Google Calendar">
+                            <i class="fas fa-external-link-alt"></i>
+                        </a>` : ''}
+                    </div>
+                </div>
+            `;
+        } catch (error) {
+            console.error('Error procesando evento:', error, event);
+            return '';
+        }
+    }).join('');
+    
+    container.innerHTML = eventsHTML || '<p class="text-gray-500 dark:text-gray-400 py-4">No se pudieron cargar las reservas</p>';
 }
 
 // Helper functions
@@ -324,6 +485,12 @@ function initializeNavigation() {
 // Event Listeners
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Aplicación iniciada');
+    
+    // Inicializar navegación
+    initializeNavigation();
+    
+    // Mostrar la sección de dashboard por defecto
+    showSection('dashboard');
     
     // Inicializar la navegación
     initializeNavigation();
@@ -630,7 +797,23 @@ async function loadMenuItems() {
             return;
         }
         
-        data.forEach(item => {
+        // Filtrar elementos con precio mayor a 0
+        const filteredData = data.filter(item => {
+            const precio = parseFloat(item.Precio || item.price || item.precio || 0);
+            return precio > 0;
+        });
+
+        if (filteredData.length === 0) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                    No hay elementos en el menú con precio mayor a 0
+                </td>`;
+            menuItemsContainer.appendChild(row);
+            return [];
+        }
+
+        filteredData.forEach(item => {
             const row = document.createElement('tr');
             
             // Usar cualquier campo que pueda contener el nombre
@@ -656,6 +839,8 @@ async function loadMenuItems() {
             `;
             menuItemsContainer.appendChild(row);
         });
+
+        return filteredData;
         
         return data;
     } catch (error) {
@@ -746,35 +931,48 @@ async function loadOrders() {
 }
 
 async function loadReservations() {
+    const reservationsList = document.getElementById('reservation-items');
+    if (!reservationsList) {
+        console.error('No se encontró el contenedor de reservas');
+        return;
+    }
+    
     try {
-        // Cargar eventos del calendario en lugar de reservas de la base de datos
-        if (calendarEvents.length === 0) {
-            // Si no hay eventos cargados, cargarlos primero
-            await loadCalendarEvents();
-        }
-        
-        const reservationsList = document.getElementById('reservation-items');
-        if (!reservationsList) return;
-        
         // Mostrar indicador de carga
         reservationsList.innerHTML = '<tr><td colspan="8" class="px-6 py-4 text-center">Cargando reservas...</td></tr>';
         
-        // Ordenar eventos por fecha
-        const sortedEvents = [...calendarEvents].sort((a, b) => new Date(a.start) - new Date(b.start));
+        // Obtener la fecha de hoy
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // Cargar eventos del calendario para hoy
+        const events = await loadCalendarEvents();
+        
+        // Filtrar solo los eventos de hoy
+        const todayEvents = events.filter(event => {
+            const eventDate = new Date(event.start?.dateTime || event.start?.date || event.start);
+            eventDate.setHours(0, 0, 0, 0);
+            return eventDate.getTime() === today.getTime();
+        });
         
         // Limpiar la lista
         reservationsList.innerHTML = '';
         
-        if (sortedEvents.length === 0) {
-            reservationsList.innerHTML = '<tr><td colspan="8" class="px-6 py-4 text-center text-gray-500">No hay reservas programadas</td></tr>';
+        if (todayEvents.length === 0) {
+            reservationsList.innerHTML = `
+                <tr>
+                    <td colspan="8" class="px-6 py-4 text-center text-gray-500">
+                        No hay reservas para hoy
+                    </td>
+                </tr>`;
             return;
         }
         
         // Mostrar los eventos en la tabla
-        sortedEvents.forEach(event => {
+        todayEvents.forEach(event => {
             try {
                 // Extraer información del evento
-                const eventDate = new Date(event.start);
+                const eventDate = new Date(event.start?.dateTime || event.start?.date || event.start);
                 const formattedDate = eventDate.toLocaleDateString('es-ES', { 
                     weekday: 'short', 
                     day: '2-digit', 
@@ -784,23 +982,44 @@ async function loadReservations() {
                 
                 const formattedTime = eventDate.toLocaleTimeString('es-ES', { 
                     hour: '2-digit', 
-                    minute: '2-digit' 
+                    minute: '2-digit',
+                    hour12: false
                 });
                 
-                // Extraer información adicional del título (si sigue el formato "Nombre (X pax) Mesa Y")
-                let customerName = event.title || 'Reserva';
-                let people = 1;
-                let tableNumber = '';
+                // Extraer información del título y descripción
+                const title = event.summary || event.title || 'Reserva';
+                const description = event.description || '';
                 
-                const peopleMatch = customerName.match(/\(\s*(\d+)\s*pax\)/i);
+                // Extraer información de personas
+                let customerName = title;
+                let people = 1;
+                
+                // Buscar información de personas en el título o descripción
+                const peopleMatch = title.match(/\((\d+)\s*pax\)/i) || 
+                                  description.match(/(\d+)\s*(personas?|pax|comensales?)/i);
+                
                 if (peopleMatch) {
                     people = parseInt(peopleMatch[1], 10);
+                    customerName = customerName.replace(peopleMatch[0], '').trim();
                 }
                 
-                const tableMatch = customerName.match(/Mesa\s*(\d+)/i);
+                // Buscar número de mesa en la descripción
+                let tableNumber = '';
+                const tableMatch = description.match(/Mesa[\s:]*([^\s<]+)/i) || 
+                                 description.match(/Mesa\s*(\d+|S\/N)/i);
+                
                 if (tableMatch) {
-                    tableNumber = tableMatch[1];
+                    tableNumber = tableMatch[1].replace(/[^\d\/A-Z]+/gi, '');
                 }
+                
+                // Limpiar el nombre del cliente
+                customerName = customerName
+                    .replace(/\(\d+\s*pax\)/i, '') // Eliminar (X pax)
+                    .replace(/\d+/g, '') // Eliminar números sueltos
+                    .replace(/\s+/g, ' ') // Eliminar espacios múltiples
+                    .trim();
+                    
+                if (!customerName) customerName = 'Reserva sin nombre';
                 
                 // Extraer el nombre del cliente (eliminando la información de personas y mesa)
                 customerName = customerName.replace(/\s*\(\d+\s*pax\)/i, '').replace(/\s*Mesa\s*\d+/i, '').trim();
@@ -1040,27 +1259,32 @@ async function loadCalendarEvents() {
     try {
         console.log('Cargando eventos del calendario...');
         
-        // Obtener la fecha actual y la fecha dentro de 30 días
+        // Obtener la fecha actual y la fecha de fin de día
         const now = new Date();
-        const thirtyDaysLater = new Date();
-        thirtyDaysLater.setDate(now.getDate() + 30);
+        const endOfDay = new Date(now);
+        endOfDay.setHours(23, 59, 59, 999);
         
         // Formatear fechas para la API
         const timeMin = now.toISOString();
-        const timeMax = thirtyDaysLater.toISOString();
+        const timeMax = endOfDay.toISOString();
         
-        // Hacer la petición a la API
-        const events = await apiRequest(`/reservations/calendar-events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}`);
+        console.log(`Buscando eventos entre ${timeMin} y ${timeMax}`);
         
-        // Guardar los eventos en la variable global
-        calendarEvents = Array.isArray(events) ? events : [];
+        // Hacer la petición a la API de reservas
+        const events = await apiRequest(`/reservations?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}`);
         
-        console.log('Eventos del calendario cargados:', calendarEvents);
+        // Verificar la respuesta
+        if (!Array.isArray(events)) {
+            console.error('La respuesta de la API no es un array:', events);
+            return [];
+        }
+        
+        console.log('Eventos del calendario cargados:', events);
         
         // Actualizar la interfaz de usuario
-        updateCalendarEventsUI(calendarEvents);
+        updateUpcomingReservationsTable(events);
         
-        return calendarEvents;
+        return events;
     } catch (error) {
         console.error('Error al cargar eventos del calendario:', error);
         showNotification('Error al cargar eventos del calendario', 'error');
@@ -1085,8 +1309,15 @@ function updateCalendarEventsUI(events) {
         // Ordenar eventos por fecha
         const sortedEvents = [...events].sort((a, b) => new Date(a.start) - new Date(b.start));
         
-        // Limitar a los próximos 5 eventos
-        const upcomingEvents = sortedEvents.slice(0, 5);
+        // Mostrar todos los eventos del día actual
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const upcomingEvents = sortedEvents.filter(event => {
+            const eventDate = new Date(event.start);
+            eventDate.setHours(0, 0, 0, 0);
+            return eventDate.getTime() === today.getTime();
+        });
         
         // Función para extraer información del título y descripción
         const parseEventInfo = (event) => {
