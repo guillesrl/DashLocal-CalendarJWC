@@ -17,8 +17,8 @@
     <div class="md:hidden bg-dark text-white p-4 flex items-center justify-between">
         <h1 class="text-xl font-bold">Restaurant</h1>
         <div class="flex items-center space-x-2">
-            <button id="dark-mode-toggle-mobile" class="p-2 rounded-lg hover:bg-secondary transition" title="Cambiar modo">
-                <i class="fas fa-moon" id="dark-mode-icon-mobile"></i>
+            <button id="dark-mode-toggle-mobile" class="bg-gray-700 border border-gray-600 p-2 rounded-lg hover:bg-secondary transition" title="Cambiar modo">
+                <i class="fas fa-moon text-xl" id="dark-mode-icon-mobile"></i>
             </button>
             <button id="mobile-menu-btn" class="text-white">
                 <i class="fas fa-bars"></i>
@@ -31,8 +31,8 @@
         <aside id="sidebar" class="fixed md:relative w-64 bg-dark text-white min-h-screen p-4 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out z-50">
             <div class="hidden md:flex items-center justify-between mb-8">
                 <h1 class="text-2xl font-bold">Restaurant</h1>
-                <button id="dark-mode-toggle" class="p-2 rounded-lg hover:bg-secondary transition" title="Cambiar modo">
-                    <i class="fas fa-moon" id="dark-mode-icon"></i>
+                <button id="dark-mode-toggle" class="bg-gray-700 border border-gray-600 p-2 rounded-lg hover:bg-secondary transition" title="Cambiar modo">
+                    <i class="fas fa-moon text-xl" id="dark-mode-icon"></i>
                 </button>
             </div>
             
@@ -78,15 +78,15 @@
                 <div class="grid grid-cols-3 gap-2 md:gap-6 mb-6 md:mb-8">
                     <div class="bg-white dark:bg-gray-800 p-3 md:p-6 rounded-lg shadow">
                         <h3 class="text-sm md:text-lg font-semibold mb-1 md:mb-2 dark:text-white">Pedidos Hoy</h3>
-                        <p class="text-xl md:text-3xl font-bold text-primary" id="today-orders">0</p>
+                        <p class="text-xl md:text-3xl font-bold dark:text-white" id="today-orders">0</p>
                     </div>
                     <div class="bg-white dark:bg-gray-800 p-3 md:p-6 rounded-lg shadow">
                         <h3 class="text-sm md:text-lg font-semibold mb-1 md:mb-2 dark:text-white">Reservas Hoy</h3>
-                        <p class="text-xl md:text-3xl font-bold text-primary" id="today-reservations">0</p>
+                        <p class="text-xl md:text-3xl font-bold dark:text-white" id="today-reservations">0</p>
                     </div>
                     <div class="bg-white dark:bg-gray-800 p-3 md:p-6 rounded-lg shadow">
                         <h3 class="text-sm md:text-lg font-semibold mb-1 md:mb-2 dark:text-white">Ingresos Hoy</h3>
-                        <p class="text-xl md:text-3xl font-bold text-primary" id="today-revenue">$0</p>
+                        <p class="text-xl md:text-3xl font-bold dark:text-white" id="today-revenue">$0</p>
                     </div>
                 </div>
 
@@ -116,7 +116,7 @@
                         <div class="flex justify-between items-center mb-4">
                             <h3 class="text-lg font-semibold dark:text-white">Próximas Reservas</h3>
                             <div class="flex space-x-2">
-                                <button onclick="loadCalendarEvents()" class="text-blue-500 hover:text-blue-700" title="Actualizar eventos">
+                                <button onclick="loadCalendarEvents()" class="dark:text-white hover:text-blue-700" title="Actualizar eventos">
                                     <i class="fas fa-sync-alt"></i>
                                 </button>
                                 <button onclick="syncWithGoogleCalendar()" class="text-green-500 hover:text-green-700" title="Sincronizar con Google Calendar">
@@ -139,7 +139,7 @@
                         <button onclick="loadMenuItems()" class="flex items-center bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded transition" title="Recargar menú">
                             <i class="fas fa-sync-alt"></i>
                         </button>
-                        <button onclick="showAddMenuItemModal()" class="bg-primary hover:bg-secondary text-white px-4 py-2 rounded transition flex items-center">
+                        <button onclick="showAddMenuItemModal()" class="bg-blue-500 hover:bg-secondary text-white px-4 py-2 rounded transition flex items-center">
                             <i class="fas fa-plus mr-2"></i>Agregar Item
                         </button>
                     </div>
@@ -173,12 +173,6 @@
             <!-- Orders Section -->
             <section id="orders" class="section-content">
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold">Gestión de Pedidos</h2>
-                    <button onclick="showAddOrderModal()" class="bg-primary text-white px-4 py-2 rounded hover:bg-secondary transition">
-                        <i class="fas fa-plus mr-2"></i>Nuevo Pedido
-                    </button>
-                </div>
-
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="min-w-full">
@@ -207,7 +201,7 @@
             <section id="reservations" class="section-content">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold">Gestión de Reservas</h2>
-                    <button onclick="showAddReservationModal()" class="bg-primary text-white px-4 py-2 rounded hover:bg-secondary transition">
+                    <button onclick="showAddReservationModal()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-secondary transition">
                         <i class="fas fa-plus mr-2"></i>Nueva Reserva
                     </button>
                 </div>
@@ -270,7 +264,7 @@
                 
                 <div class="flex justify-end">
                     <button type="button" onclick="hideModal('add-order-modal')" class="mr-2 px-4 py-2 border rounded">Cancelar</button>
-                    <button type="submit" class="bg-primary text-white px-4 py-2 rounded hover:bg-secondary transition">Guardar</button>
+                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-secondary transition">Guardar</button>
                 </div>
             </form>
         </div>
@@ -309,7 +303,7 @@
                 </div>
                 <div class="flex justify-end">
                     <button type="button" onclick="hideModal('add-menu-item-modal')" class="mr-2 px-4 py-2 border rounded">Cancelar</button>
-                    <button type="submit" class="bg-primary text-white px-4 py-2 rounded hover:bg-secondary transition">Guardar</button>
+                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-secondary transition">Guardar</button>
                 </div>
             </form>
         </div>
@@ -361,7 +355,7 @@
                 </div>
                 <div class="flex justify-end">
                     <button type="button" onclick="hideModal('add-reservation-modal')" class="mr-2 px-4 py-2 border rounded">Cancelar</button>
-                    <button type="submit" class="bg-primary text-white px-4 py-2 rounded hover:bg-secondary transition">Guardar</button>
+                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-secondary transition">Guardar</button>
                 </div>
             </form>
         </div>
