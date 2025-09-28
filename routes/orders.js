@@ -218,35 +218,4 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// PATCH /api/orders/:id - Actualizar estado de la orden
-router.patch('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
-
-    if (!status) {
-      return res.status(400).json({ error: 'El estado es requerido' });
-    }
-
-    const { data, error } = await supabase
-      .from('orders')
-      .update({ status, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        return res.status(404).json({ error: 'Orden no encontrada' });
-      }
-      throw error;
-    }
-
-    res.json(data);
-  } catch (error) {
-    console.error('Error actualizando estado de la orden:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
-  }
-});
-
 module.exports = router;

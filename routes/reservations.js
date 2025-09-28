@@ -12,22 +12,14 @@ router.get('/', async (req, res) => {
             await calendarService.initialize();
         }
 
-        let { timeMin, timeMax } = req.query;
-
-        if (!timeMin) {
-            timeMin = new Date().toISOString();
-        }
-
-        if (!timeMax) {
-            const maxDate = new Date();
-            maxDate.setDate(maxDate.getDate() + 30);
-            timeMax = maxDate.toISOString();
-        }
+        const timeMin = new Date().toISOString();
+        const timeMax = new Date();
+        timeMax.setDate(timeMax.getDate() + 30); // Obtener eventos para los próximos 30 días
 
         const response = await calendarService.calendar.events.list({
             calendarId: calendarService.calendarId,
             timeMin: timeMin,
-            timeMax: timeMax,
+            timeMax: timeMax.toISOString(),
             singleEvents: true,
             orderBy: 'startTime',
         });
@@ -206,22 +198,14 @@ router.get('/calendar-events', async (req, res) => {
             await calendarService.initialize();
         }
 
-        let { timeMin, timeMax } = req.query;
-
-        if (!timeMin) {
-            timeMin = new Date().toISOString();
-        }
-
-        if (!timeMax) {
-            const maxDate = new Date();
-            maxDate.setDate(maxDate.getDate() + 30);
-            timeMax = maxDate.toISOString();
-        }
+        const timeMin = new Date().toISOString();
+        const timeMax = new Date();
+        timeMax.setDate(timeMax.getDate() + 30); // Obtener eventos para los próximos 30 días
 
         const response = await calendarService.calendar.events.list({
             calendarId: calendarService.calendarId,
             timeMin: timeMin,
-            timeMax: timeMax,
+            timeMax: timeMax.toISOString(),
             singleEvents: true,
             orderBy: 'startTime',
         });

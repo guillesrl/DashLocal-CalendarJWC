@@ -2,7 +2,6 @@
 module.exports = {
   content: [
     "./public/Dashboard.html",
-    "./public/js/app.js",
     "./src/**/*.{html,js}",
     "./**/*.html"
   ],
@@ -19,8 +18,4 @@ module.exports = {
     },
   },
   plugins: [],
-  safelist: [
-    'bg-yellow-100',
-    'text-yellow-800',
-  ]
 }

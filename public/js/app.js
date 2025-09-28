@@ -21,7 +21,6 @@ async function apiRequest(endpoint, options = {}) {
                 'Content-Type': 'application/json',
                 ...options.headers
             },
-            cache: 'no-cache',
             ...options
         });
         
@@ -93,6 +92,10 @@ function showSection(sectionId) {
                 loadDashboardStats().catch(error => {
                     console.error('Error cargando el dashboard:', error);
                     showNotification('Error al cargar el dashboard', 'error');
+                });
+                loadCalendarEvents().catch(error => {
+                    console.error('Error cargando eventos del calendario:', error);
+                    showNotification('Error al cargar eventos del calendario', 'error');
                 });
                 break;
             case 'menu':
@@ -364,21 +367,10 @@ function updateUpcomingReservationsTable(events) {
             
             // Extraer número de personas (de título o descripción)
             let people = '1';
-            const peopleMatch = title.match(/\((\d+)\s*(?:pax|personas?)\)/i) || 
+            const peopleMatch = title.match(/\((\d+)\s*pax\)/i) || 
                               description.match(/(\d+)\s*(personas?|pax|comensales?)/i);
             if (peopleMatch) {
                 people = peopleMatch[1];
-            }
-
-            // Extraer teléfono de la descripción si está disponible
-            let phone = 'N/A';
-            if (event.description) {
-                const phoneMatch = event.description.match(/Tel[ée]fono:\s*([^\n]+)/i);
-                if (phoneMatch) {
-                    phone = phoneMatch[1].trim();
-                } else {
-                    phone = event.description.trim();
-                }
             }
             
             // Extraer número de mesa (de descripción)
@@ -391,8 +383,7 @@ function updateUpcomingReservationsTable(events) {
             
             // Limpiar el nombre del cliente
             let customerName = title
-                .replace(/\((\d+)\s*pax\)/i, '') // Eliminar (X pax)
-                .replace(/\((\d+)\s*personas?\)/i, '') // Eliminar (X personas)
+                .replace(/\(\d+\s*pax\)/i, '') // Eliminar (X pax)
                 .replace(/\d+/g, '') // Eliminar números sueltos
                 .replace(/\s+/g, ' ') // Eliminar espacios múltiples
                 .trim();
@@ -410,7 +401,7 @@ function updateUpcomingReservationsTable(events) {
                                     <i class="far fa-clock mr-1"></i>${timeStr}
                                 </span>
                                 <span class="flex items-center mr-3">
-                                    <i class="fas fa-phone mr-1"></i>${phone}
+                                    <i class="fas fa-users mr-1"></i>${people}
                                 </span>
                                 <span class="flex items-center">
                                     <i class="fas fa-utensils mr-1"></i>Mesa ${table}
@@ -435,14 +426,13 @@ function updateUpcomingReservationsTable(events) {
 
 // Helper functions
 function getStatusBadgeClass(status) {
-    const statusToUse = status || 'pendiente';
     const statusClasses = {
         'completado': 'bg-green-100 text-green-800',
         'en_proceso': 'bg-yellow-100 text-yellow-800',
         'cancelado': 'bg-red-100 text-red-800',
-        'pendiente': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+        'pendiente': 'bg-gray-100 text-gray-800'
     };
-    return statusClasses[statusToUse] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+    return statusClasses[status] || 'bg-gray-100 text-gray-800';
 }
 
 function formatTime(timeString) {
@@ -498,6 +488,17 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Inicializar navegación
     initializeNavigation();
+    
+    // Mostrar la sección de dashboard por defecto
+    showSection('dashboard');
+    
+    // Inicializar la navegación
+    initializeNavigation();
+    
+    // Cargar solo los datos necesarios para el dashboard inicial
+    loadDashboardStats().catch(error => {
+        console.error('Error cargando estadísticas del dashboard:', error);
+    });
     
     // Mostrar la sección de dashboard por defecto
     showSection('dashboard');
@@ -721,7 +722,8 @@ async function addReservation(e) {
         // Recargar los datos
         await Promise.all([
             loadReservations(),
-            loadDashboardStats()
+            loadDashboardStats(),
+            loadCalendarEvents()
         ]);
         
     } catch (error) {
@@ -816,21 +818,14 @@ async function loadMenuItems() {
             
             // Usar cualquier campo que pueda contener el nombre
             const nombre = item.Nombre || item.name || item.nombre || 'Sin nombre';
-            const descripcion = item.Ingredientes || item.ingredientes || item.Descripcion || item.description || item.descripcion || 'N/A';
+            const descripcion = item.Descripcion || item.description || item.descripcion || 'N/A';
             const precio = item.Precio || item.price || item.precio || 0;
             const categoria = item.Categoría || item.Categoria || item.category || 'N/A';
             
             row.innerHTML = `
                 <td class="px-3 md:px-6 py-4 whitespace-nowrap">${item.id}</td>
                 <td class="px-3 md:px-6 py-4 whitespace-nowrap">${nombre}</td>
-                <td class="px-3 md:px-6 py-4 whitespace-nowrap">
-                    <div class="relative group">
-                        <button class="bg-blue-500 text-white px-2 py-1 rounded text-xs">Ingredientes</button>
-                        <div class="absolute z-10 hidden group-hover:block bg-white text-gray-700 border rounded-lg p-4 w-80 right-0">
-                            <p class="text-sm whitespace-normal">${descripcion}</p>
-                        </div>
-                    </div>
-                </td>
+                <td class="hidden md:table-cell px-6 py-4">${descripcion}</td>
                 <td class="px-3 md:px-6 py-4 whitespace-nowrap">$${parseFloat(precio).toFixed(2)}</td>
                 <td class="hidden sm:table-cell px-3 md:px-6 py-4 whitespace-nowrap">${categoria}</td>
                 <td class="px-3 md:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -946,18 +941,24 @@ async function loadReservations() {
         // Mostrar indicador de carga
         reservationsList.innerHTML = '<tr><td colspan="8" class="px-6 py-4 text-center">Cargando reservas...</td></tr>';
         
-        // Cargar eventos del calendario para los próximos 30 días
-        const now = new Date();
-        now.setHours(0, 0, 0, 0); // Set to the beginning of the day
-        const future = new Date(now);
-        future.setHours(23, 59, 59, 999); // Set to the end of the day
-
-        const events = await loadCalendarEvents(now.toISOString(), future.toISOString());
+        // Obtener la fecha de hoy
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // Cargar eventos del calendario para hoy
+        const events = await loadCalendarEvents();
+        
+        // Filtrar solo los eventos de hoy
+        const todayEvents = events.filter(event => {
+            const eventDate = new Date(event.start?.dateTime || event.start?.date || event.start);
+            eventDate.setHours(0, 0, 0, 0);
+            return eventDate.getTime() === today.getTime();
+        });
         
         // Limpiar la lista
         reservationsList.innerHTML = '';
         
-        if (events.length === 0) {
+        if (todayEvents.length === 0) {
             reservationsList.innerHTML = `
                 <tr>
                     <td colspan="8" class="px-6 py-4 text-center text-gray-500">
@@ -967,11 +968,8 @@ async function loadReservations() {
             return;
         }
         
-        // Sort events by date
-        events.sort((a, b) => new Date(a.start?.dateTime || a.start?.date) - new Date(b.start?.dateTime || b.start?.date));
-
         // Mostrar los eventos en la tabla
-        events.forEach(event => {
+        todayEvents.forEach(event => {
             try {
                 // Extraer información del evento
                 const eventDate = new Date(event.start?.dateTime || event.start?.date || event.start);
@@ -997,7 +995,7 @@ async function loadReservations() {
                 let people = 1;
                 
                 // Buscar información de personas en el título o descripción
-                const peopleMatch = title.match(/\((\d+)\s*(?:pax|personas?)\)/i) || 
+                const peopleMatch = title.match(/\((\d+)\s*pax\)/i) || 
                                   description.match(/(\d+)\s*(personas?|pax|comensales?)/i);
                 
                 if (peopleMatch) {
@@ -1032,8 +1030,6 @@ async function loadReservations() {
                     const phoneMatch = event.description.match(/Tel[ée]fono:\s*([^\n]+)/i);
                     if (phoneMatch) {
                         phone = phoneMatch[1].trim();
-                    } else {
-                        phone = event.description.trim();
                     }
                 }
                 
@@ -1142,8 +1138,8 @@ async function updateOrderStatus(id, status) {
         });
         
         showNotification('Estado del pedido actualizado correctamente', 'success');
-        await loadOrders();
-        await loadDashboardStats();
+        loadOrders();
+        loadDashboardStats();
     } catch (error) {
         console.error('Error updating order status:', error);
         showNotification('Error al actualizar el estado del pedido', 'error');
@@ -1259,22 +1255,23 @@ async function editReservation(id) {
 }
 
 // Load calendar events from the API
-async function loadCalendarEvents(timeMin, timeMax) {
+async function loadCalendarEvents() {
     try {
         console.log('Cargando eventos del calendario...');
         
-        // Use provided range, or default to today
+        // Obtener la fecha actual y la fecha de fin de día
         const now = new Date();
         const endOfDay = new Date(now);
         endOfDay.setHours(23, 59, 59, 999);
-
-        const min = timeMin || now.toISOString();
-        const max = timeMax || endOfDay.toISOString();
         
-        console.log(`Buscando eventos entre ${min} y ${max}`);
+        // Formatear fechas para la API
+        const timeMin = now.toISOString();
+        const timeMax = endOfDay.toISOString();
+        
+        console.log(`Buscando eventos entre ${timeMin} y ${timeMax}`);
         
         // Hacer la petición a la API de reservas
-        const events = await apiRequest(`/reservations?timeMin=${encodeURIComponent(min)}&timeMax=${encodeURIComponent(max)}`);
+        const events = await apiRequest(`/reservations?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}`);
         
         // Verificar la respuesta
         if (!Array.isArray(events)) {
@@ -1283,6 +1280,9 @@ async function loadCalendarEvents(timeMin, timeMax) {
         }
         
         console.log('Eventos del calendario cargados:', events);
+        
+        // Actualizar la interfaz de usuario
+        updateUpcomingReservationsTable(events);
         
         return events;
     } catch (error) {
