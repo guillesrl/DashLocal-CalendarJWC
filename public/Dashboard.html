@@ -75,18 +75,60 @@
             <section id="dashboard" class="section-content active">
                 <h2 class="text-2xl font-bold mb-6">Resumen del Restaurante</h2>
                 
-                <div class="grid grid-cols-3 gap-2 md:gap-6 mb-6 md:mb-8">
-                    <div class="bg-white dark:bg-gray-800 p-3 md:p-6 rounded-lg shadow">
-                        <h3 class="text-sm md:text-lg font-semibold mb-1 md:mb-2 dark:text-white">Pedidos Hoy</h3>
-                        <p class="text-xl md:text-3xl font-bold dark:text-white" id="today-orders">0</p>
+                <div class="grid grid-cols-3 gap-6 mb-6 md:mb-8">
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow flex items-center">
+                        <div class="rounded-full p-3 mr-4">
+                            <i class="fas fa-clipboard-list text-white text-xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Pedidos</h3>
+                            <div class="flex items-baseline justify-between">
+                                <div>
+                                    <p class="text-2xl font-bold text-gray-900 dark:text-white" id="today-orders">0</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Hoy</p>
+                                </div>
+                                <div>
+                                    <p class="text-2xl font-bold text-gray-900 dark:text-white" id="month-orders">0</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Mes</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="bg-white dark:bg-gray-800 p-3 md:p-6 rounded-lg shadow">
-                        <h3 class="text-sm md:text-lg font-semibold mb-1 md:mb-2 dark:text-white">Reservas Hoy</h3>
-                        <p class="text-xl md:text-3xl font-bold dark:text-white" id="today-reservations">0</p>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow flex items-center">
+                        <div class="bg-green-500 rounded-full p-3 mr-4">
+                            <i class="fas fa-calendar-alt text-white text-xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Reservas</h3>
+                            <div class="flex items-baseline justify-between">
+                                <div>
+                                    <p class="text-2xl font-bold text-gray-900 dark:text-white" id="today-reservations">0</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Hoy</p>
+                                </div>
+                                <div>
+                                    <p class="text-2xl font-bold text-gray-900 dark:text-white" id="month-reservations">0</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Mes</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="bg-white dark:bg-gray-800 p-3 md:p-6 rounded-lg shadow">
-                        <h3 class="text-sm md:text-lg font-semibold mb-1 md:mb-2 dark:text-white">Ingresos Hoy</h3>
-                        <p class="text-xl md:text-3xl font-bold dark:text-white" id="today-revenue">$0</p>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow flex items-center">
+                        <div class="bg-yellow-500 rounded-full p-3 mr-4">
+                            <i class="fas fa-dollar-sign text-white text-xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Ingresos</h3>
+                            <div class="flex items-baseline justify-between">
+                                <div>
+                                    <p class="text-2xl font-bold text-gray-900 dark:text-white" id="today-revenue">$0</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Hoy</p>
+                                </div>
+                                <div>
+                                    <p class="text-2xl font-bold text-gray-900 dark:text-white" id="month-revenue">$0</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Mes</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -96,14 +138,7 @@
                         <h3 class="text-lg font-semibold mb-4 dark:text-white">Pedidos Recientes</h3>
                         <div class="overflow-x-auto">
                             <table class="min-w-full" id="recent-orders">
-                                <thead>
-                                    <tr class="border-b">
-                                        <th class="text-left py-2">ID</th>
-                                        <th class="text-left py-2">Dirección</th>
-                                        <th class="text-left py-2">Total</th>
-                                        <th class="text-left py-2">Estado</th>
-                                    </tr>
-                                </thead>
+                                
                                 <tbody>
                                     <!-- Filled by JavaScript -->
                                 </tbody>
@@ -134,7 +169,7 @@
             <!-- Menu Section -->
             <section id="menu" class="section-content">
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold">Gestión de Menú</h2>
+                    <h2 class="text-2xl font-bold">Gestión de Menu</h2>
                     <div class="flex space-x-2">
                         <button onclick="loadMenuItems()" class="flex items-center bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded transition" title="Recargar menú">
                             <i class="fas fa-sync-alt"></i>
@@ -147,20 +182,13 @@
 
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
                     <div class="overflow-x-auto">
-                        <table class="min-w-full">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ID</th>
-                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Nombre</th>
-                                    <th class="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Descripción</th>
-                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Precio</th>
-                                    <th class="hidden sm:table-cell px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Categoría</th>
-                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Acciones</th>
-                                </tr>
-                            </thead>
+                        <table class="min-w-full" id="menu-table">
+
                             <tbody id="menu-items" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                
+                                
                                 <tr id="loading-message">
-                                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                                    <td colspan="7" class="px-6 py-4 text-center text-gray-500">
                                         Cargando menú...
                                     </td>
                                 </tr>
@@ -172,7 +200,7 @@
 
             <!-- Orders Section -->
             <section id="orders" class="section-content">
-                <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Gestión de Pedidos</h2>
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="min-w-full">
@@ -180,7 +208,7 @@
                                 <tr>
                                     <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ID</th>
                                     <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Cliente</th>
-                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Teléfono</th>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking.wider">Teléfono</th>
                                     <th class="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Dirección</th>
                                     <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Items</th>
                                     <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total</th>
@@ -210,7 +238,7 @@
                     <div class="overflow-x-auto">
                         <table class="min-w-full">
                             <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
+                                <tr class="border-b-2 border-gray-200 dark:border-gray-600">
                                     <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ID</th>
                                     <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Cliente</th>
                                     <th class="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Teléfono</th>
@@ -224,6 +252,9 @@
                             <tbody id="reservation-items" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                 <!-- Reservation items will be loaded here -->
                             </tbody>
+                            <tfoot id="reservation-summary">
+                                <!-- Reservation summary will be loaded here -->
+                            </tfoot>
                         </table>
                     </div>
                 </div>
@@ -300,6 +331,10 @@
                         <option value="postres">Postres</option>
                         <option value="bebidas">Bebidas</option>
                     </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Stock</label>
+                    <input type="number" name="stock" class="w-full px-3 py-2 border rounded" required>
                 </div>
                 <div class="flex justify-end">
                     <button type="button" onclick="hideModal('add-menu-item-modal')" class="mr-2 px-4 py-2 border rounded">Cancelar</button>

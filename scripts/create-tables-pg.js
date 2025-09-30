@@ -13,20 +13,21 @@ async function createTablesWithPostgreSQL() {
         const client = await pool.connect();
         console.log('✅ Conectado a PostgreSQL');
         
-        // Crear tabla menu_items
-        console.log('\n📋 Creando tabla menu_items...');
+        // Crear tabla menu
+        console.log('\n📋 Creando tabla menu...');
         await client.query(`
-            CREATE TABLE IF NOT EXISTS menu_items (
+            CREATE TABLE IF NOT EXISTS menu (
                 id SERIAL PRIMARY KEY,
-                name VARCHAR(255) NOT NULL,
-                price DECIMAL(10,2) NOT NULL,
-                category VARCHAR(100),
-                description TEXT,
+                nombre VARCHAR(255) NOT NULL,
+                precio DECIMAL(10,2) NOT NULL,
+                categoria VARCHAR(100),
+                ingredientes TEXT,
+                stock INTEGER DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
-        console.log('✅ Tabla menu_items creada');
+        console.log('✅ Tabla menu creada');
         
         // Crear tabla orders
         console.log('\n📋 Creando tabla orders...');
@@ -68,22 +69,22 @@ async function createTablesWithPostgreSQL() {
         await client.query(`CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)`);
         console.log('✅ Índices creados');
         
-        // Insertar datos de ejemplo en menu_items
-        console.log('\n🍽️ Insertando datos de ejemplo en menu_items...');
-        const menuResult = await client.query('SELECT COUNT(*) FROM menu_items');
+        // Insertar datos de ejemplo en menu
+        console.log('\n🍽️ Insertando datos de ejemplo en menu...');
+        const menuResult = await client.query('SELECT COUNT(*) FROM menu');
         const menuCount = parseInt(menuResult.rows[0].count);
         
         if (menuCount === 0) {
             await client.query(`
-                INSERT INTO menu_items (name, price, category, description) VALUES
-                ('Pizza Margherita', 12.99, 'platos-principales', 'Pizza clásica con tomate, mozzarella y albahaca'),
-                ('Ensalada César', 8.50, 'entradas', 'Lechuga romana, parmesano, crutones y aderezo césar'),
-                ('Pasta Carbonara', 14.99, 'platos-principales', 'Pasta con huevo, panceta, parmesano y pimienta negra'),
-                ('Tiramisu', 6.99, 'postres', 'Postre italiano con café, mascarpone y cacao'),
-                ('Coca Cola', 2.50, 'bebidas', 'Refresco de cola 330ml'),
-                ('Agua Mineral', 1.50, 'bebidas', 'Agua mineral natural 500ml')
+                INSERT INTO menu (nombre, precio, categoria, ingredientes, stock) VALUES
+                ('Pizza Margherita', 12.99, 'platos-principales', 'Pizza clásica con tomate, mozzarella y albahaca', 10),
+                ('Ensalada César', 8.50, 'entradas', 'Lechuga romana, parmesano, crutones y aderezo césar', 15),
+                ('Pasta Carbonara', 14.99, 'platos-principales', 'Pasta con huevo, panceta, parmesano y pimienta negra', 12),
+                ('Tiramisu', 6.99, 'postres', 'Postre italiano con café, mascarpone y cacao', 20),
+                ('Coca Cola', 2.50, 'bebidas', 'Refresco de cola 330ml', 50),
+                ('Agua Mineral', 1.50, 'bebidas', 'Agua mineral natural 500ml', 50)
             `);
-            console.log('✅ Datos de ejemplo insertados en menu_items');
+            console.log('✅ Datos de ejemplo insertados en menu');
         } else {
             console.log(`ℹ️  Menu ya tiene ${menuCount} items`);
         }
@@ -94,7 +95,7 @@ async function createTablesWithPostgreSQL() {
             SELECT table_name 
             FROM information_schema.tables 
             WHERE table_schema = 'public' 
-            AND table_name IN ('menu_items', 'orders', 'reservations')
+            AND table_name IN ('menu', 'orders', 'reservations')
             ORDER BY table_name
         `);
         
@@ -104,12 +105,12 @@ async function createTablesWithPostgreSQL() {
         });
         
         // Contar registros en cada tabla
-        const menuCountResult = await client.query('SELECT COUNT(*) FROM menu_items');
+        const menuCountResult = await client.query('SELECT COUNT(*) FROM menu');
         const ordersCountResult = await client.query('SELECT COUNT(*) FROM orders');
         const reservationsCountResult = await client.query('SELECT COUNT(*) FROM reservations');
         
         console.log('\n📈 Registros por tabla:');
-        console.log(`  menu_items: ${menuCountResult.rows[0].count}`);
+        console.log(`  menu: ${menuCountResult.rows[0].count}`);
         console.log(`  orders: ${ordersCountResult.rows[0].count}`);
         console.log(`  reservations: ${reservationsCountResult.rows[0].count}`);
         

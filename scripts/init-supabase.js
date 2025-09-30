@@ -8,12 +8,12 @@ async function initializeSupabaseDatabase() {
         // Crear tabla de menú
         const { error: menuError } = await supabase.rpc('execute_sql', {
             query: `
-                CREATE TABLE IF NOT EXISTS menu_items (
+                CREATE TABLE IF NOT EXISTS menu (
                     id SERIAL PRIMARY KEY,
-                    name VARCHAR(255) NOT NULL,
-                    price DECIMAL(10,2) NOT NULL,
-                    category VARCHAR(100),
-                    description TEXT,
+                    nombre VARCHAR(255) NOT NULL,
+                    precio DECIMAL(10,2) NOT NULL,
+                    categoria VARCHAR(100),
+                    ingredientes TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
@@ -21,9 +21,9 @@ async function initializeSupabaseDatabase() {
         });
         
         if (menuError && !menuError.message.includes('already exists')) {
-            console.error('Error creando tabla menu_items:', menuError);
+            console.error('Error creando tabla menu:', menuError);
         } else {
-            console.log('✅ Tabla menu_items creada/verificada');
+            console.log('✅ Tabla menu creada/verificada');
         }
         
         // Crear tabla de órdenes
@@ -82,10 +82,10 @@ async function initializeSupabaseDatabase() {
         });
         
         console.log('✅ Base de datos Supabase inicializada correctamente');
-        console.log('Tablas creadas: menu_items, orders, reservations');
+        console.log('Tablas creadas: menu, orders, reservations');
         
         // Verificar conexión con una consulta simple
-        const { data, error } = await supabase.from('menu_items').select('count(*)').limit(1);
+        const { data, error } = await supabase.from('menu').select('count(*)').limit(1);
         if (error) {
             console.error('❌ Error verificando conexión:', error);
         } else {

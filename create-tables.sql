@@ -2,12 +2,13 @@
 -- Ejecutar en el SQL Editor de Supabase Dashboard
 
 -- Crear tabla menu_items
-CREATE TABLE IF NOT EXISTS menu_items (
+CREATE TABLE IF NOT EXISTS menu (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    price DECIMAL(10,2) NOT NULL,
-    category VARCHAR(100),
-    description TEXT,
+    nombre VARCHAR(255) NOT NULL,
+    precio DECIMAL(10,2) NOT NULL,
+    categoria VARCHAR(100),
+    ingredientes TEXT,
+    stock INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -41,10 +42,10 @@ CREATE TABLE IF NOT EXISTS reservations (
 -- Crear índices para mejorar el rendimiento
 CREATE INDEX IF NOT EXISTS idx_reservations_date ON reservations(date);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
-CREATE INDEX IF NOT EXISTS idx_menu_category ON menu_items(category);
+CREATE INDEX IF NOT EXISTS idx_menu_category ON menu(categoria);
 
--- Insertar datos de ejemplo en menu_items
-INSERT INTO menu_items (name, price, category, description) VALUES
+-- Insertar datos de ejemplo en menu
+INSERT INTO menu (nombre, precio, categoria, ingredientes) VALUES
 ('Pizza Margherita', 12.99, 'platos-principales', 'Pizza clásica con tomate, mozzarella y albahaca'),
 ('Ensalada César', 8.50, 'entradas', 'Lechuga romana, parmesano, crutones y aderezo césar'),
 ('Pasta Carbonara', 14.99, 'platos-principales', 'Pasta con huevo, panceta, parmesano y pimienta negra'),
@@ -58,7 +59,7 @@ INSERT INTO menu_items (name, price, category, description) VALUES
 ON CONFLICT DO NOTHING;
 
 -- Verificar que las tablas se crearon correctamente
-SELECT 'menu_items' as tabla, COUNT(*) as registros FROM menu_items
+SELECT 'menu' as tabla, COUNT(*) as registros FROM menu
 UNION ALL
 SELECT 'orders' as tabla, COUNT(*) as registros FROM orders
 UNION ALL

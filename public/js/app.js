@@ -56,7 +56,7 @@ async function apiRequest(endpoint, options = {}) {
 // Navigation functions
 function showSection(sectionId) {
     console.log(`Mostrando sección: ${sectionId}`);
-    
+
     // Validar que la sección existe
     const section = document.getElementById(sectionId);
     if (!section) {
@@ -65,9 +65,9 @@ function showSection(sectionId) {
     }
     
     // Ocultar todas las secciones
-    document.querySelectorAll('.section-content').forEach(section => {
-        section.classList.remove('active');
-        section.classList.add('hidden');
+    document.querySelectorAll('.section-content').forEach(s => {
+        s.classList.remove('active');
+        s.classList.add('hidden');
     });
     
     try {
@@ -192,41 +192,49 @@ function showAddOrderModal() {
 // Data loading functions
 async function loadDashboardStats() {
     try {
-        const today = new Date().toISOString().split('T')[0];
-        
-        // Load today's orders
-        const ordersResponse = await apiRequest(`/orders?date=${today}`);
-        const todayOrders = ordersResponse.data || [];
+        const now = new Date();
+        const today = now.toISOString().split('T')[0];
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999).toISOString();
+
+        // Fetch monthly orders
+        const monthlyOrdersResponse = await apiRequest(`/orders?startDate=${startOfMonth.split('T')[0]}&endDate=${endOfMonth.split('T')[0]}`);
+        const monthlyOrders = monthlyOrdersResponse.data || [];
+        document.getElementById('month-orders').textContent = monthlyOrders.length;
+
+        // Filter today's orders from the monthly list
+        const todayOrders = monthlyOrders.filter(order => (order.created_at || order.date).startsWith(today));
         document.getElementById('today-orders').textContent = todayOrders.length;
         
-        // Calculate today's revenue
+        // Calculate revenues
         const todayRevenue = todayOrders.reduce((sum, order) => sum + (parseFloat(order.total) || 0), 0);
         document.getElementById('today-revenue').textContent = `$${todayRevenue.toFixed(2)}`;
         
+        const monthRevenue = monthlyOrders.reduce((sum, order) => sum + (parseFloat(order.total) || 0), 0);
+        document.getElementById('month-revenue').textContent = `$${monthRevenue.toFixed(2)}`;
+
         // Update recent orders table
         updateRecentOrdersTable(todayOrders.slice(0, 5));
         
-        // Load calendar events for today
-        const now = new Date();
-        const endOfDay = new Date(now);
-        endOfDay.setHours(23, 59, 59, 999);
-        
-        console.log('Cargando eventos del calendario...');
-        console.log('Rango de fechas:', {
-            desde: now.toISOString(),
-            hasta: endOfDay.toISOString()
+        // Fetch monthly reservations
+        const monthlyReservationsResponse = await apiRequest(`/reservations/calendar-events?timeMin=${encodeURIComponent(startOfMonth)}&timeMax=${encodeURIComponent(endOfMonth)}`);
+        const monthlyReservations = Array.isArray(monthlyReservationsResponse) ? monthlyReservationsResponse : [];
+        document.getElementById('month-reservations').textContent = monthlyReservations.length;
+
+        // Filter today's reservations from the monthly list
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+        const endOfToday = new Date();
+        endOfToday.setHours(23, 59, 59, 999);
+
+        const todayReservations = monthlyReservations.filter(event => {
+            const eventStartDate = new Date(event.start?.dateTime || event.start?.date);
+            return eventStartDate >= startOfToday && eventStartDate <= endOfToday;
         });
+        document.getElementById('today-reservations').textContent = todayReservations.length;
         
-        const response = await apiRequest(`/reservations/calendar-events?timeMin=${encodeURIComponent(now.toISOString())}&timeMax=${encodeURIComponent(endOfDay.toISOString())}`);
-        const events = Array.isArray(response) ? response : [];
-        
-        console.log('Eventos recibidos:', events);
-        
-        // Update today's reservations count
-        document.getElementById('today-reservations').textContent = events.length;
-        
-        // Update upcoming reservations table with calendar events
-        updateUpcomingReservationsTable(events);
+        // Update upcoming reservations table
+        updateUpcomingReservationsTable(todayReservations);
         
     } catch (error) {
         console.error('Error loading dashboard stats:', error);
@@ -239,6 +247,13 @@ function updateRecentOrdersTable(orders) {
     if (!tbody) return;
     
     tbody.innerHTML = '';
+
+    if (orders.length === 0) {
+        const row = document.createElement('tr');
+        row.innerHTML = `<td colspan="4" class="py-4 text-center text-gray-500">No hay pedidos hoy</td>`;
+        tbody.appendChild(row);
+        return;
+    }
     
     orders.forEach(order => {
         const row = document.createElement('tr');
@@ -494,90 +509,92 @@ function initializeNavigation() {
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Aplicación iniciada');
-    
-    // Inicializar navegación
-    initializeNavigation();
-    
-    // Mostrar la sección de dashboard por defecto
-    showSection('dashboard');
-    
-    // Configurar el botón de menú móvil
-    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-    const sidebar = document.getElementById('sidebar');
-    const sidebarOverlay = document.getElementById('sidebar-overlay');
-    
-    if (mobileMenuBtn && sidebar) {
-        mobileMenuBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('-translate-x-full');
-            if (sidebarOverlay) {
-                sidebarOverlay.classList.toggle('hidden');
+    setTimeout(() => {
+        console.log('Aplicación iniciada');
+        
+        // Inicializar navegación
+        initializeNavigation();
+        
+        // Mostrar la sección de dashboard por defecto
+        showSection('dashboard');
+        
+        // Configurar el botón de menú móvil
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+        
+        if (mobileMenuBtn && sidebar) {
+            mobileMenuBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('-translate-x-full');
+                if (sidebarOverlay) {
+                    sidebarOverlay.classList.toggle('hidden');
+                }
+            });
+        }
+        
+        if (sidebarOverlay) {
+            sidebarOverlay.addEventListener('click', () => {
+                sidebar.classList.add('-translate-x-full');
+                sidebarOverlay.classList.add('hidden');
+            });
+        }
+        
+        // El código de inicialización del menú móvil ya está más arriba
+        
+        // Dark mode toggle
+        const darkModeToggle = document.getElementById('dark-mode-toggle');
+        const darkModeToggleMobile = document.getElementById('dark-mode-toggle-mobile');
+        const darkModeIcon = document.getElementById('dark-mode-icon');
+        const darkModeIconMobile = document.getElementById('dark-mode-icon-mobile');
+        
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            
+            // Update icons
+            if (darkModeIcon) {
+                darkModeIcon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
             }
-        });
-    }
-    
-    if (sidebarOverlay) {
-        sidebarOverlay.addEventListener('click', () => {
-            sidebar.classList.add('-translate-x-full');
-            sidebarOverlay.classList.add('hidden');
-        });
-    }
-    
-    // El código de inicialización del menú móvil ya está más arriba
-    
-    // Dark mode toggle
-    const darkModeToggle = document.getElementById('dark-mode-toggle');
-    const darkModeToggleMobile = document.getElementById('dark-mode-toggle-mobile');
-    const darkModeIcon = document.getElementById('dark-mode-icon');
-    const darkModeIconMobile = document.getElementById('dark-mode-icon-mobile');
-    
-    function toggleDarkMode() {
-        document.documentElement.classList.toggle('dark');
-        const isDark = document.documentElement.classList.contains('dark');
-        
-        // Update icons
-        if (darkModeIcon) {
-            darkModeIcon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
-        }
-        if (darkModeIconMobile) {
-            darkModeIconMobile.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+            if (darkModeIconMobile) {
+                darkModeIconMobile.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+            }
+            
+            // Save preference to localStorage
+            localStorage.setItem('darkMode', isDark);
         }
         
-        // Save preference to localStorage
-        localStorage.setItem('darkMode', isDark);
-    }
-    
-    if (darkModeToggle) {
-        darkModeToggle.addEventListener('click', toggleDarkMode);
-    }
-    
-    if (darkModeToggleMobile) {
-        darkModeToggleMobile.addEventListener('click', toggleDarkMode);
-    }
-    
-    // Check for saved user preference
-    if (localStorage.getItem('darkMode') === 'true' || 
-        (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-        document.documentElement.classList.add('dark');
-        if (darkModeIcon) darkModeIcon.className = 'fas fa-sun';
-        if (darkModeIconMobile) darkModeIconMobile.className = 'fas fa-sun';
-    }
-    
-    // Form submissions
-    const addOrderForm = document.getElementById('add-order-form');
-    if (addOrderForm) {
-        addOrderForm.addEventListener('submit', addOrder);
-    }
-    
-    const addMenuItemForm = document.getElementById('add-menu-item-form');
-    if (addMenuItemForm) {
-        addMenuItemForm.addEventListener('submit', addMenuItem);
-    }
-    
-    const addReservationForm = document.getElementById('add-reservation-form');
-    if (addReservationForm) {
-        addReservationForm.addEventListener('submit', addReservation);
-    }
+        if (darkModeToggle) {
+            darkModeToggle.addEventListener('click', toggleDarkMode);
+        }
+        
+        if (darkModeToggleMobile) {
+            darkModeToggleMobile.addEventListener('click', toggleDarkMode);
+        }
+        
+        // Check for saved user preference
+        if (localStorage.getItem('darkMode') === 'true' || 
+            (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            if (darkModeIcon) darkModeIcon.className = 'fas fa-sun';
+            if (darkModeIconMobile) darkModeIconMobile.className = 'fas fa-sun';
+        }
+        
+        // Form submissions
+        const addOrderForm = document.getElementById('add-order-form');
+        if (addOrderForm) {
+            addOrderForm.addEventListener('submit', addOrder);
+        }
+        
+        const addMenuItemForm = document.getElementById('add-menu-item-form');
+        if (addMenuItemForm) {
+            addMenuItemForm.addEventListener('submit', saveMenuItem);
+        }
+        
+        const addReservationForm = document.getElementById('add-reservation-form');
+        if (addReservationForm) {
+            addReservationForm.addEventListener('submit', addReservation);
+        }
+    }, 100);
 });
 
 // Form handling functions
@@ -613,32 +630,37 @@ async function addOrder(e) {
     }
 }
 
-async function addMenuItem(e) {
+async function saveMenuItem(e) {
     e.preventDefault();
     
     const form = e.target;
     const formData = new FormData(form);
     const menuItemData = {
-        name: formData.get('name'),
-        description: formData.get('description'),
-        price: parseFloat(formData.get('price')),
-        category: formData.get('category'),
-        created_at: new Date().toISOString()
+        nombre: formData.get('name'),
+        ingredientes: formData.get('description'),
+        precio: parseFloat(formData.get('price')),
+        categoria: formData.get('category'),
+        stock: parseInt(formData.get('stock'))
     };
-    
+
+    const editId = form.dataset.editId;
+    const method = editId ? 'PUT' : 'POST';
+    const endpoint = editId ? `/menu/${editId}` : '/menu';
+
     try {
-        const response = await apiRequest('/menu', {
-            method: 'POST',
+        const response = await apiRequest(endpoint, {
+            method: method,
             body: JSON.stringify(menuItemData)
         });
         
-        showNotification('Ítem del menú agregado correctamente', 'success');
+        showNotification('Ítem del menú guardado correctamente', 'success');
         hideModal('add-menu-item-modal');
         form.reset();
+        form.dataset.editId = ''; // Clear editId after saving
         loadMenuItems();
     } catch (error) {
-        console.error('Error adding menu item:', error);
-        showNotification('Error al agregar el ítem del menú', 'error');
+        console.error('Error saving menu item:', error);
+        showNotification('Error al guardar el ítem del menú', 'error');
     }
 }
 
@@ -752,8 +774,33 @@ async function addReservation(e) {
 
 // Data loading functions
 async function loadMenuItems() {
-    const menuItemsContainer = document.getElementById('menu-items');
-    
+    const menuTable = document.getElementById('menu-table'); // Get the table element
+    if (!menuTable) {
+        console.error('No se encontró la tabla del menú');
+        return;
+    }
+    menuTable.innerHTML = ''; // Clear the table
+
+    const thead = document.createElement('thead');
+    thead.classList.add('bg-gray-50', 'dark:bg-gray-700');
+    thead.innerHTML = `
+        <tr>
+            <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ID</th>
+            <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Nombre</th>
+            <th class="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Descripción</th>
+            <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Precio</th>
+            <th class="hidden sm:table-cell px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Categoría</th>
+            <th class="hidden sm:table-cell px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Stock</th>
+            <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Acciones</th>
+        </tr>
+    `;
+    menuTable.appendChild(thead);
+
+    const menuItemsContainer = document.createElement('tbody');
+    menuItemsContainer.id = 'menu-items';
+    menuItemsContainer.classList.add('bg-white', 'dark:bg-gray-800', 'divide-y', 'divide-gray-200', 'dark:divide-gray-700');
+    menuTable.appendChild(menuItemsContainer);
+
     try {
         const response = await fetch('/api/menu');
         
@@ -768,26 +815,13 @@ async function loadMenuItems() {
         }
         
         menuItems = data;
-        
-        if (!menuItemsContainer) {
-            console.warn('No se encontró el contenedor de elementos del menú');
-            return;
-        }
-        
-        // Eliminar el mensaje de carga si existe
-        const loadingMessage = document.getElementById('loading-message');
-        if (loadingMessage) {
-            loadingMessage.remove();
-        } else {
-            // Si no hay mensaje de carga, limpiar la tabla
-            menuItemsContainer.innerHTML = '';
-        }
+
         
         if (data.length === 0) {
             console.log('No hay elementos en el menú');
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                <td colspan="7" class="px-6 py-4 text-center text-gray-500">
                     No hay elementos en el menú
                 </td>
             `;
@@ -804,7 +838,7 @@ async function loadMenuItems() {
         if (filteredData.length === 0) {
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                <td colspan="7" class="px-6 py-4 text-center text-gray-500">
                     No hay elementos en el menú con precio mayor a 0
                 </td>`;
             menuItemsContainer.appendChild(row);
@@ -815,24 +849,28 @@ async function loadMenuItems() {
             const row = document.createElement('tr');
             
             // Usar cualquier campo que pueda contener el nombre
-            const nombre = item.Nombre || item.name || item.nombre || 'Sin nombre';
-            const descripcion = item.Ingredientes || item.ingredientes || item.Descripcion || item.description || item.descripcion || 'N/A';
-            const precio = item.Precio || item.price || item.precio || 0;
-            const categoria = item.Categoría || item.Categoria || item.category || 'N/A';
+            const nombre = item.nombre || 'Sin nombre';
+            const ingredientes = item.ingredientes || 'N/A';
+            const precio = item.precio || 0;
+            const categoria = item.categoria || 'N/A';
+            const stock = item.stock || 0;
             
             row.innerHTML = `
-                <td class="px-3 md:px-6 py-4 whitespace-nowrap">${item.id}</td>
-                <td class="px-3 md:px-6 py-4 whitespace-nowrap">${nombre}</td>
-                <td class="px-3 md:px-6 py-4 whitespace-nowrap">
+                <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm">${item.id}</td>
+                <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm">${nombre}</td>
+                <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm">
                     <div class="relative group">
                         <button class="bg-blue-500 text-white px-2 py-1 rounded text-xs">Ingredientes</button>
                         <div class="absolute z-10 hidden group-hover:block bg-white text-gray-700 border rounded-lg p-4 w-80 right-0">
-                            <p class="text-sm whitespace-normal">${descripcion}</p>
+                            <p class="text-sm whitespace-normal">${ingredientes}</p>
                         </div>
                     </div>
                 </td>
-                <td class="px-3 md:px-6 py-4 whitespace-nowrap">$${parseFloat(precio).toFixed(2)}</td>
-                <td class="hidden sm:table-cell px-3 md:px-6 py-4 whitespace-nowrap">${categoria}</td>
+                <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm">$${parseFloat(precio).toFixed(2)}</td>
+                <td class="hidden sm:table-cell px-3 md:px-6 py-4 whitespace-nowrap text-sm">${categoria}</td>
+                <td class="hidden sm:table-cell px-3 md:px-6 py-4 whitespace-nowrap text-sm">
+                    <input type="number" value="${stock}" onchange="updateStock(${item.id}, this.value)" style="width: 60px;" class="px-2 py-1 border rounded dark:bg-gray-800 dark:text-white" />
+                </td>
                 <td class="px-3 md:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button onclick="editMenuItem(${item.id})" class="text-indigo-600 hover:text-indigo-900 mr-3">
                         <i class="fas fa-edit"></i>
@@ -846,8 +884,6 @@ async function loadMenuItems() {
         });
 
         return filteredData;
-        
-        return data;
     } catch (error) {
         console.error('Error cargando elementos del menú:', error);
         
@@ -957,6 +993,8 @@ async function loadReservations() {
         // Limpiar la lista
         reservationsList.innerHTML = '';
         
+        const summaryFoot = document.getElementById('reservation-summary');
+        
         if (events.length === 0) {
             reservationsList.innerHTML = `
                 <tr>
@@ -964,11 +1002,14 @@ async function loadReservations() {
                         No hay reservas para hoy
                     </td>
                 </tr>`;
+            if (summaryFoot) summaryFoot.innerHTML = ''; // Clear summary
             return;
         }
         
         // Sort events by date
         events.sort((a, b) => new Date(a.start?.dateTime || a.start?.date) - new Date(b.start?.dateTime || b.start?.date));
+
+        let totalPeople = 0;
 
         // Mostrar los eventos en la tabla
         events.forEach(event => {
@@ -997,14 +1038,16 @@ async function loadReservations() {
                 let people = 1;
                 
                 // Buscar información de personas en el título o descripción
-                const peopleMatch = title.match(/\((\d+)\s*(?:pax|personas?)\)/i) || 
-                                  description.match(/(\d+)\s*(personas?|pax|comensales?)/i);
+                const peopleMatch = title.match(/\(\s*(\d+)\s*(?:pax|personas?)\s*\)/i) || 
+                                  description.match(/Personas:\s*(\d+)/i);
                 
                 if (peopleMatch) {
                     people = parseInt(peopleMatch[1], 10);
                     customerName = customerName.replace(peopleMatch[0], '').trim();
                 }
                 
+                totalPeople += people;
+
                 // Buscar número de mesa en la descripción
                 let tableNumber = '';
                 const tableMatch = description.match(/Mesa[\s:]*([^\s<]+)/i) || 
@@ -1014,17 +1057,9 @@ async function loadReservations() {
                     tableNumber = tableMatch[1].replace(/[^\d\/A-Z]+/gi, '');
                 }
                 
-                // Limpiar el nombre del cliente
-                customerName = customerName
-                    .replace(/\(\d+\s*pax\)/i, '') // Eliminar (X pax)
-                    .replace(/\d+/g, '') // Eliminar números sueltos
-                    .replace(/\s+/g, ' ') // Eliminar espacios múltiples
-                    .trim();
-                    
+                // Limpiar el nombre del cliente (eliminando la información de personas y mesa)
+                customerName = customerName.replace(/Mesa\s*(\d+|S\/N)/i, '').trim();
                 if (!customerName) customerName = 'Reserva sin nombre';
-                
-                // Extraer el nombre del cliente (eliminando la información de personas y mesa)
-                customerName = customerName.replace(/\s*\(\d+\s*pax\)/i, '').replace(/\s*Mesa\s*\d+/i, '').trim();
                 
                 // Extraer teléfono de la descripción si está disponible
                 let phone = 'N/A';
@@ -1057,10 +1092,10 @@ async function loadReservations() {
                         ${formattedTime}
                     </td>
                     <td class="hidden sm:table-cell px-3 md:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                        ${people}
+                        ${people} ${people === 1 ? 'persona' : 'personas'}
                     </td>
                     <td class="hidden sm:table-cell px-3 md:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                        ${tableNumber || 'N/A'}
+                        ${tableNumber || 'No'}
                     </td>
                     <td class="px-3 md:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <a href="${event.htmlLink}" target="_blank" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3" title="Ver en Google Calendar">
@@ -1077,6 +1112,16 @@ async function loadReservations() {
                 console.error('Error procesando evento del calendario:', error, event);
             }
         });
+
+        if (summaryFoot) {
+            summaryFoot.innerHTML = `
+                <tr class="bg-gray-50 dark:bg-gray-700 border-t-2 border-gray-200 dark:border-gray-600">
+                    <td colspan="5" class="px-3 md:px-6 py-3 text-right text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total Comensales</td>
+                    <td class="px-3 md:px-6 py-3 text-xs font-bold text-gray-900 dark:text-white">${totalPeople}</td>
+                    <td colspan="2"></td>
+                </tr>
+            `;
+        }
         
     } catch (error) {
         console.error('Error loading reservations:', error);
@@ -1103,10 +1148,11 @@ async function editMenuItem(id) {
     if (!form) return;
     
     // Populate form
-    form.elements['name'].value = item.name || '';
-    form.elements['description'].value = item.description || '';
-    form.elements['price'].value = item.price || '';
-    form.elements['category'].value = item.category || 'entradas';
+    form.elements['name'].value = item.nombre || '';
+    form.elements['description'].value = item.ingredientes || '';
+    form.elements['price'].value = item.precio || '';
+    form.elements['category'].value = item.categoria || 'entradas';
+    form.elements['stock'].value = item.stock || 0;
     
     // Change form to update mode
     form.dataset.editId = id;
@@ -1131,6 +1177,20 @@ async function deleteMenuItem(id) {
     } catch (error) {
         console.error('Error deleting menu item:', error);
         showNotification('Error al eliminar el ítem del menú', 'error');
+    }
+}
+
+async function updateStock(id, stock) {
+    try {
+        const response = await apiRequest(`/menu/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ stock: parseInt(stock) })
+        });
+        
+        showNotification('Stock actualizado correctamente', 'success');
+    } catch (error) {
+        console.error('Error updating stock:', error);
+        showNotification('Error al actualizar el stock', 'error');
     }
 }
 

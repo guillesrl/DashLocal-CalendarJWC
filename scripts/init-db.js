@@ -9,12 +9,12 @@ async function initializeDatabase() {
         
         // Crear tabla de menú
         await client.query(`
-            CREATE TABLE IF NOT EXISTS menu_items (
+            CREATE TABLE IF NOT EXISTS menu (
                 id SERIAL PRIMARY KEY,
-                name VARCHAR(255) NOT NULL,
-                price DECIMAL(10,2) NOT NULL,
-                category VARCHAR(100),
-                description TEXT,
+                nombre VARCHAR(255) NOT NULL,
+                precio DECIMAL(10,2) NOT NULL,
+                categoria VARCHAR(100),
+                ingredientes TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
@@ -72,7 +72,7 @@ async function initializeDatabase() {
         `);
         
         console.log('✅ Base de datos PostgreSQL inicializada correctamente');
-        console.log('Tablas creadas: menu_items, orders, reservations');
+        console.log('Tablas creadas: menu, orders, reservations');
         
     } catch (error) {
         console.error('❌ Error inicializando base de datos:', error);

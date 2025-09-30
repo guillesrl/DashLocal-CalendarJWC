@@ -19,35 +19,7 @@ app.use('/api/menu', menuRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/reservations', reservationsRoutes);
 
-app.patch('/api/orders/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
 
-    if (!status) {
-      return res.status(400).json({ error: 'El estado es requerido' });
-    }
-
-    const { data, error } = await supabase
-      .from('orders')
-      .update({ status, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        return res.status(404).json({ error: 'Orden no encontrada' });
-      }
-      throw error;
-    }
-
-    res.json(data);
-  } catch (error) {
-    console.error('Error actualizando estado de la orden:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
-  }
-});
 
 // Health check endpoint
 app.get('/api/health', async (req, res) => {

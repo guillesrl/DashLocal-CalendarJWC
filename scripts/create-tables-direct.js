@@ -13,18 +13,18 @@ async function createTablesDirectly() {
     
     try {
         // Verificar si las tablas ya existen intentando hacer una consulta simple
-        console.log('\n📋 Verificando tabla menu_items...');
+        console.log('\n📋 Verificando tabla menu...');
         const { data: menuCheck, error: menuError } = await supabase
-            .from('menu_items')
+            .from('menu')
             .select('count')
             .limit(1);
             
         if (menuError && menuError.code === 'PGRST106') {
-            console.log('❌ Tabla menu_items no existe');
+            console.log('❌ Tabla menu no existe');
         } else if (menuError) {
-            console.log('❌ Error verificando menu_items:', menuError.message);
+            console.log('❌ Error verificando menu:', menuError.message);
         } else {
-            console.log('✅ Tabla menu_items ya existe');
+            console.log('✅ Tabla menu ya existe');
         }
         
         console.log('\n📋 Verificando tabla orders...');
@@ -55,29 +55,30 @@ async function createTablesDirectly() {
             console.log('✅ Tabla reservations ya existe');
         }
         
-        // Intentar insertar un registro de prueba en menu_items para verificar acceso
-        console.log('\n🧪 Probando inserción en menu_items...');
+        // Intentar insertar un registro de prueba en menu para verificar acceso
+        console.log('\n🧪 Probando inserción en menu...');
         const { data: testInsert, error: insertError } = await supabase
-            .from('menu_items')
+            .from('menu')
             .insert([
                 {
-                    name: 'Test Item',
-                    price: 9.99,
-                    category: 'test',
-                    description: 'Item de prueba'
+                    nombre: 'Test Item',
+                    precio: 9.99,
+                    categoria: 'test',
+                    ingredientes: 'Item de prueba',
+                    stock: 10
                 }
             ])
             .select();
             
         if (insertError) {
-            console.log('❌ Error insertando en menu_items:', insertError.message);
+            console.log('❌ Error insertando en menu:', insertError.message);
             console.log('Código de error:', insertError.code);
         } else {
-            console.log('✅ Inserción exitosa en menu_items:', testInsert);
+            console.log('✅ Inserción exitosa en menu:', testInsert);
             
             // Eliminar el registro de prueba
             const { error: deleteError } = await supabase
-                .from('menu_items')
+                .from('menu')
                 .delete()
                 .eq('name', 'Test Item');
                 
