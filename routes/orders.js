@@ -1,49 +1,62 @@
 require('dotenv').config();
 const express = require('express');
 const { google } = require('googleapis');
-
-// Configure Google Auth using credentials file or environment variables
-let auth = null;
-
-try {
-  // First try to use credentials file if path is provided
-  if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH) {
-    const fs = require('fs');
-    const path = require('path');
-    const credentialsPath = path.resolve(__dirname, '..', process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH);
-    
-    if (fs.existsSync(credentialsPath)) {
-      console.log('📁 Loading Google credentials from file:', credentialsPath);
-      auth = new google.auth.GoogleAuth({
-        keyFile: credentialsPath,
-        scopes: ['https://www.googleapis.com/auth/calendar'],
-      });
-      console.log('✅ Google Calendar credentials loaded from file');
-    } else {
-      console.warn('⚠️ Credentials file not found:', credentialsPath);
-    }
-  }
-  // Fallback to environment variables
-  else if (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY) {
-    const credentials = {
-      client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-      private_key: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY.replace(/\\n/g, '\n'),
-    };
-    
-    auth = new google.auth.GoogleAuth({
-      credentials: credentials,
-      scopes: ['https://www.googleapis.com/auth/calendar'],
-    });
-    console.log('✅ Google Calendar credentials loaded from environment variables');
-  } else {
-    console.warn('⚠️ Google Calendar credentials not configured');
-  }
-} catch (error) {
-  console.error('❌ Error configuring Google Auth:', error.message);
-}
+const { supabase } = require('../config/database');
 
 const router = express.Router();
-const { supabase } = require('../config/database');
+
+// Función para inicializar la autenticación de Google
+const initializeGoogleAuth = () => {
+  try {
+    // Verificar si tenemos las variables de entorno necesarias
+    if (!process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || !process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY) {
+      console.error('❌ Missing required Google service account environment variables');
+      return null;
+    }
+
+    console.log('🔑 Initializing Google Auth with service account email:', process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL);
+    
+    const credentials = {
+      type: 'service_account',
+      project_id: process.env.GOOGLE_PROJECT_ID || 'your-project-id',
+      private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID || 'your-private-key-id',
+      private_key: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY.replace(/\\\\n/g, '\\n'),
+      client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      client_id: process.env.GOOGLE_CLIENT_ID || 'your-client-id',
+      auth_uri: 'https://accounts.google.com/o/oauth2/auth',
+      token_uri: 'https://oauth2.googleapis.com/token',
+      auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
+      client_x509_cert_url: `https://www.googleapis.com/robot/v1/metadata/x509/${encodeURIComponent(process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL)}`
+    };
+
+    const auth = new google.auth.GoogleAuth({
+      credentials,
+      scopes: ['https://www.googleapis.com/auth/calendar'],
+    });
+
+    console.log('✅ Google Auth initialized successfully');
+    return auth;
+  } catch (error) {
+    console.error('❌ Error initializing Google Auth:', error.message);
+    console.error(error.stack);
+    return null;
+  }
+};
+
+// Inicializar autenticación al cargar el módulo
+const auth = initializeGoogleAuth();
+
+// Middleware para verificar la autenticación
+const requireAuth = (req, res, next) => {
+  if (!auth) {
+    console.error('❌ Google Auth not initialized');
+    return res.status(500).json({ 
+      error: 'Error de configuración del servidor',
+      details: 'No se pudo inicializar la autenticación de Google'
+    });
+  }
+  next();
+};
 
 // GET /api/orders - Obtener todas las órdenes
 router.get('/', async (req, res) => {
