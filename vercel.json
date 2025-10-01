@@ -8,6 +8,10 @@
     {
       "src": "api/**/*.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "public/index.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -16,9 +20,20 @@
       "dest": "/api/server.js"
     },
     {
-      "src": "/(.*)",
-      "dest": "/public/$1"
+      "src": "^/css/(.*)",
+      "dest": "/public/css/$1"
+    },
+    {
+      "src": "^/js/(.*)",
+      "dest": "/public/js/$1"
+    },
+    {
+      "src": "^/(.*)",
+      "dest": "/public/Dashboard.html"
     }
+  ],
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/public/Dashboard.html" }
   ],
   "env": {
     "NODE_ENV": "production"
