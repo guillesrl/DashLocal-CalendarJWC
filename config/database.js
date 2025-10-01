@@ -3,15 +3,26 @@ require('dotenv').config();
 
 // Configuración de Supabase
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY;
+const supabaseKey = process.env.SUPABASE_KEY;  // Asegurarse de que esté usando la clave correcta
+
+console.log('🔧 Configurando Supabase...');
+console.log('📡 URL de Supabase:', supabaseUrl ? '✅ Configurada' : '❌ No configurada');
+console.log('🔑 Clave de Supabase:', supabaseKey ? '✅ Configurada' : '❌ No configurada');
 
 let supabase = null;
 
 if (!supabaseUrl || !supabaseKey) {
-    console.warn('⚠️ Variables de entorno de Supabase no configuradas');
+    console.error('❌ Error: Variables de entorno de Supabase no configuradas correctamente');
+    console.error('SUPABASE_URL:', supabaseUrl ? '✅' : '❌ No configurada');
+    console.error('SUPABASE_KEY:', supabaseKey ? '✅' : '❌ No configurada');
 } else {
-    // Crear cliente de Supabase solo si las variables están disponibles
-    supabase = createClient(supabaseUrl, supabaseKey);
+    try {
+        // Crear cliente de Supabase solo si las variables están disponibles
+        supabase = createClient(supabaseUrl, supabaseKey);
+        console.log('✅ Cliente de Supabase inicializado correctamente');
+    } catch (error) {
+        console.error('❌ Error al inicializar el cliente de Supabase:', error.message);
+    }
 }
 
 // Función para probar la conexión

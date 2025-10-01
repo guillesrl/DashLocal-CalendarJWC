@@ -61,7 +61,28 @@ const requireAuth = (req, res, next) => {
 // GET /api/orders - Obtener todas las órdenes
 router.get('/', async (req, res) => {
   try {
+    console.log('🔍 Iniciando consulta de órdenes con parámetros:', req.query);
     const { startDate, endDate } = req.query;
+    
+    console.log('📅 Fechas recibidas - Inicio:', startDate, 'Fin:', endDate);
+    
+    // Verificar conexión con Supabase
+    console.log('🔌 Verificando conexión con Supabase...');
+    const { data: testData, error: testError } = await supabase
+      .from('orders')
+      .select('*')
+      .limit(1);
+      
+    if (testError) {
+      console.error('❌ Error de conexión con Supabase:', testError);
+      return res.status(500).json({ 
+        error: 'Error de conexión con la base de datos',
+        details: testError.message 
+      });
+    }
+    
+    console.log('✅ Conexión con Supabase exitosa');
+    
     let query = supabase
       .from('orders')
       .select('id, created_at, nombre, total, status, items, telefono, direccion')
