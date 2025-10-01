@@ -6,12 +6,12 @@
       "use": "@vercel/static"
     },
     {
-      "src": "api/**/*.js",
-      "use": "@vercel/node"
-    },
-    {
       "src": "public/index.html",
       "use": "@vercel/static"
+    },
+    {
+      "src": "api/**/*.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -28,14 +28,16 @@
       "dest": "/public/js/$1"
     },
     {
+      "src": "^/Dashboard.html",
+      "dest": "/public/Dashboard.html"
+    },
+    {
+      "src": "^/$",
+      "dest": "/public/Dashboard.html"
+    },
+    {
       "src": "^/(.*)",
       "dest": "/public/Dashboard.html"
     }
-  ],
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/public/Dashboard.html" }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  }
+  ]
 }
