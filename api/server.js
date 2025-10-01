@@ -1,9 +1,26 @@
+console.log('🚀 Iniciando servidor...');
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
 
+// Configuración de variables de entorno
+console.log('🔍 Verificando variables de entorno...');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('SUPABASE_URL:', process.env.SUPABASE_URL ? '✅ Configurada' : '❌ No configurada');
+console.log('SUPABASE_KEY:', process.env.SUPABASE_KEY ? '✅ Configurada' : '❌ No configurada');
+console.log('GOOGLE_CALENDAR_ID:', process.env.GOOGLE_CALENDAR_ID ? '✅ Configurada' : '❌ No configurada');
+
 // Import routes
-const { testConnection, supabase } = require('../config/database');
+console.log('🔄 Importando rutas...');
+try {
+    const { testConnection, supabase } = require('../config/database');
+    console.log('✅ Módulo de base de datos importado correctamente');
+} catch (error) {
+    console.error('❌ Error al importar el módulo de base de datos:', error);
+    process.exit(1);
+}
+
 const menuRoutes = require('../routes/menu');
 const ordersRoutes = require('../routes/orders');
 const reservationsRoutes = require('../routes/reservations');
@@ -11,8 +28,15 @@ const reservationsRoutes = require('../routes/reservations');
 const app = express();
 
 // Middleware
+console.log('🛠️ Configurando middleware...');
 app.use(cors());
 app.use(express.json());
+
+// Middleware de registro de solicitudes
+app.use((req, res, next) => {
+    console.log(`📥 ${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
+    next();
+});
 
 // Routes
 app.use('/api/menu', menuRoutes);
@@ -24,18 +48,48 @@ app.use('/api/reservations', reservationsRoutes);
 // Health check endpoint
 app.get('/api/health', async (req, res) => {
     try {
-        const dbConnected = await testConnection();
-        res.json({
+        console.log('🩺 Realizando health check...');
+        let dbConnected = false;
+        let dbError = null;
+        
+        try {
+            dbConnected = await testConnection();
+            console.log('✅ Conexión a la base de datos:', dbConnected ? '✅ Conectado' : '❌ Desconectado');
+        } catch (error) {
+            console.error('❌ Error en la conexión a la base de datos:', error);
+            dbError = error.message;
+        }
+        
+        const healthCheck = {
             status: 'OK',
-            database: dbConnected ? 'Connected' : 'Disconnected',
-            timestamp: new Date().toISOString()
-        });
+            timestamp: new Date().toISOString(),
+            nodeVersion: process.version,
+            environment: process.env.NODE_ENV || 'development',
+            database: {
+                connected: dbConnected,
+                error: dbError,
+                url: process.env.SUPABASE_URL ? '✅ Configurada' : '❌ No configurada'
+            },
+            services: {
+                googleCalendar: {
+                    configured: !!process.env.GOOGLE_CALENDAR_ID,
+                    calendarId: process.env.GOOGLE_CALENDAR_ID || 'No configurado'
+                }
+            },
+            memoryUsage: process.memoryUsage()
+        };
+        
+        console.log('📊 Estado del servidor:', JSON.stringify(healthCheck, null, 2));
+        
+        res.json(healthCheck);
     } catch (error) {
+        console.error('❌ Error en el health check:', error);
         res.status(500).json({
             status: 'Error',
             database: 'Disconnected',
             error: error.message,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 });
