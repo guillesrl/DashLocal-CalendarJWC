@@ -192,50 +192,44 @@ function showAddOrderModal() {
 // Data loading functions
 async function loadDashboardStats() {
     try {
-        const now = new Date();
-        const today = now.toISOString().split('T')[0];
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999).toISOString();
+        const today = new Date();
+        const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
+        const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999).toISOString();
 
-        // Fetch monthly orders
+        // Fetch today's orders
+        const ordersResponse = await apiRequest(`/orders?startDate=${startOfToday.split('T')[0]}&endDate=${endOfToday.split('T')[0]}`);
+        const todayOrders = ordersResponse.data || [];
+        document.getElementById('today-orders').textContent = todayOrders.length;
+
+        // Fetch today's reservations
+        const reservationsResponse = await apiRequest(`/reservations/calendar-events?timeMin=${encodeURIComponent(startOfToday)}&timeMax=${encodeURIComponent(endOfToday)}`);
+        const todayReservations = Array.isArray(reservationsResponse) ? reservationsResponse : [];
+        document.getElementById('today-reservations').textContent = todayReservations.length;
+
+        // Calculate revenues
+        const todayRevenue = todayOrders.reduce((sum, order) => sum + (parseFloat(order.total) || 0), 0);
+        document.getElementById('today-revenue').textContent = `$${todayRevenue.toFixed(2)}`;
+
+        // Update recent orders table
+        updateRecentOrdersTable(todayOrders.slice(0, 5));
+
+        // Update upcoming reservations table
+        updateCalendarEventsUI(todayReservations);
+
+        // Fetch monthly stats
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString();
+        const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999).toISOString();
+
         const monthlyOrdersResponse = await apiRequest(`/orders?startDate=${startOfMonth.split('T')[0]}&endDate=${endOfMonth.split('T')[0]}`);
         const monthlyOrders = monthlyOrdersResponse.data || [];
         document.getElementById('month-orders').textContent = monthlyOrders.length;
 
-        // Filter today's orders from the monthly list
-        const todayOrders = monthlyOrders.filter(order => (order.created_at || order.date).startsWith(today));
-        document.getElementById('today-orders').textContent = todayOrders.length;
-        
-        // Calculate revenues
-        const todayRevenue = todayOrders.reduce((sum, order) => sum + (parseFloat(order.total) || 0), 0);
-        document.getElementById('today-revenue').textContent = `$${todayRevenue.toFixed(2)}`;
-        
-        const monthRevenue = monthlyOrders.reduce((sum, order) => sum + (parseFloat(order.total) || 0), 0);
-        document.getElementById('month-revenue').textContent = `$${monthRevenue.toFixed(2)}`;
-
-        // Update recent orders table
-        updateRecentOrdersTable(todayOrders.slice(0, 5));
-        
-        // Fetch monthly reservations
         const monthlyReservationsResponse = await apiRequest(`/reservations/calendar-events?timeMin=${encodeURIComponent(startOfMonth)}&timeMax=${encodeURIComponent(endOfMonth)}`);
         const monthlyReservations = Array.isArray(monthlyReservationsResponse) ? monthlyReservationsResponse : [];
         document.getElementById('month-reservations').textContent = monthlyReservations.length;
 
-        // Filter today's reservations from the monthly list
-        const startOfToday = new Date();
-        startOfToday.setHours(0, 0, 0, 0);
-        const endOfToday = new Date();
-        endOfToday.setHours(23, 59, 59, 999);
-
-        const todayReservations = monthlyReservations.filter(event => {
-            const eventStartDate = new Date(event.start?.dateTime || event.start?.date);
-            return eventStartDate >= startOfToday && eventStartDate <= endOfToday;
-        });
-        document.getElementById('today-reservations').textContent = todayReservations.length;
-        
-        // Update upcoming reservations table
-        updateUpcomingReservationsTable(todayReservations);
-        
+        const monthRevenue = monthlyOrders.reduce((sum, order) => sum + (parseFloat(order.total) || 0), 0);
+        document.getElementById('month-revenue').textContent = `$${monthRevenue.toFixed(2)}`;
     } catch (error) {
         console.error('Error loading dashboard stats:', error);
         showNotification('Error al cargar las estadísticas del dashboard', 'error');
@@ -258,12 +252,12 @@ function updateRecentOrdersTable(orders) {
     orders.forEach(order => {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td class="py-2">${order.id}</td>
-            <td class="py-2">${order.direccion || 'N/A'}</td>
+            <td class="py-2">${order.customer_name || 'N/A'}</td>
+            <td class="py-2">${new Date(order.created_at).toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'})}</td>
             <td class="py-2">$${parseFloat(order.total || 0).toFixed(2)}</td>
             <td class="py-2">
-                <span class="px-2 py-1 text-xs rounded-full ${getStatusBadgeClass(order.estado)}">
-                    ${order.estado || 'Pendiente'}
+                <span class="px-2 py-1 text-xs font-medium rounded-full ${getStatusBadgeClass(order.status)}">
+                    ${getStatusLabel(order.status)}
                 </span>
             </td>
         `;
@@ -271,193 +265,32 @@ function updateRecentOrdersTable(orders) {
     });
 }
 
-// Función para procesar un evento individual
-function parseEvent(event) {
-    try {
-        console.log('Procesando evento:', event);
-        
-        // Obtener título y descripción
-        const title = event.summary || 'Reserva sin título';
-        const description = event.description || '';
-        
-        // Manejo de fechas
-        let startTime, dateString = 'Hora no disponible';
-        
-        if (event.start) {
-            startTime = event.start.dateTime ? new Date(event.start.dateTime) : 
-                      (event.start.date ? new Date(event.start.date) : null);
-            
-            if (startTime && !isNaN(startTime.getTime())) {
-                dateString = startTime.toLocaleTimeString('es-ES', { 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                });
-            }
-        }
-        
-        // Extraer información del título (formato: "Nombre (X pax)")
-        const titleMatch = title.match(/(.*?)\s*\((\d+)\s*pax\)/i) || [];
-        const customerName = (titleMatch[1] || title).trim();
-        const people = titleMatch[2] ? parseInt(titleMatch[2], 10) : 1;
-        
-        // Extraer número de mesa de la descripción
-        const tableMatch = description.match(/Mesa:\s*(\d+|S\/N)/i);
-        const table = tableMatch ? tableMatch[1] : 'N/A';
-        
-        return {
-            customerName,
-            time: dateString,
-            people,
-            table,
-            htmlLink: event.htmlLink || '#'
-        };
-        
-    } catch (error) {
-        console.error('Error al procesar el evento:', error, event);
-        return {
-            customerName: 'Error al cargar',
-            time: '--:--',
-            people: 0,
-            table: 'N/A',
-            htmlLink: '#'
-        };
-    }
-}
 
-function updateUpcomingReservationsTable(events) {
-    const container = document.getElementById('upcoming-events');
-    if (!container) {
-        console.error('No se encontró el contenedor de eventos');
-        return;
-    }
-    
-    console.log('Eventos recibidos para mostrar:', events);
-    
-    // Mostrar mensaje si no hay eventos
-    if (!Array.isArray(events) || events.length === 0) {
-        container.innerHTML = '<p class="text-gray-500 dark:text-gray-400 py-4">No hay reservas para hoy</p>';
-        return;
-    }
-    
-    // Función para obtener el timestamp de un evento
-    const getEventTime = (event) => {
-        // Manejar diferentes formatos de fecha de inicio
-        if (event.start?.dateTime) return new Date(event.start.dateTime).getTime();
-        if (event.start?.date) return new Date(event.start.date).getTime();
-        if (event.start) return new Date(event.start).getTime();
-        return 0;
-    };
-    
-    // Ordenar eventos por hora de inicio
-    const sortedEvents = [...events].sort((a, b) => getEventTime(a) - getEventTime(b));
-    
-    // Procesar cada evento (máximo 5)
-    const eventsHTML = sortedEvents.slice(0, 5).map(event => {
-        try {
-            console.log('Procesando evento:', event);
-            
-            // Extraer información básica
-            const title = event.summary || event.title || 'Reserva';
-            const description = event.description || '';
-            
-            // Obtener la hora de inicio en el formato correcto
-            let timeStr = '--:--';
-            const startTime = event.start?.dateTime || event.start?.date || event.start;
-            
-            if (startTime) {
-                try {
-                    const date = new Date(startTime);
-                    if (!isNaN(date.getTime())) {
-                        const hours = String(date.getHours()).padStart(2, '0');
-                        const minutes = String(date.getMinutes()).padStart(2, '0');
-                        timeStr = `${hours}:${minutes}`;
-                    }
-                } catch (error) {
-                    console.error('Error al formatear la hora:', error);
-                }
-            }
-            
-            // Extraer número de personas (de título o descripción)
-            let people = '1';
-            const peopleMatch = title.match(/\((\d+)\s*(?:pax|personas?)\)/i) || 
-                              description.match(/(\d+)\s*(personas?|pax|comensales?)/i);
-            if (peopleMatch) {
-                people = peopleMatch[1];
-            }
 
-            // Extraer teléfono de la descripción si está disponible
-            let phone = 'N/A';
-            if (event.description) {
-                const phoneMatch = event.description.match(/Tel[ée]fono:\s*([^\n]+)/i);
-                if (phoneMatch) {
-                    phone = phoneMatch[1].trim();
-                } else {
-                    phone = event.description.trim();
-                }
-            }
-            
-            // Extraer número de mesa (de descripción)
-            let table = 'N/A';
-            const tableMatch = description.match(/Mesa[\s:]*([^\s<]+)/i) || 
-                             description.match(/Mesa\s*(\d+|S\/N)/i);
-            if (tableMatch) {
-                table = tableMatch[1].replace(/[^\d\/A-Z]+/gi, ''); // Limpiar el texto
-            }
-            
-            // Limpiar el nombre del cliente
-            let customerName = title
-                .replace(/\((\d+)\s*pax\)/i, '') // Eliminar (X pax)
-                .replace(/\((\d+)\s*personas?\)/i, '') // Eliminar (X personas)
-                .replace(/\d+/g, '') // Eliminar números sueltos
-                .replace(/\s+/g, ' ') // Eliminar espacios múltiples
-                .trim();
-                
-            if (!customerName) customerName = 'Reserva sin nombre';
-            
-            // Crear HTML del evento
-            return `
-                <div class="border-b border-gray-200 dark:border-gray-700 py-3">
-                    <div class="flex justify-between items-center">
-                        <div class="min-w-0">
-                            <h4 class="font-medium text-gray-900 dark:text-white truncate">${customerName}</h4>
-                            <p class="text-sm text-gray-500 dark:text-gray-400 flex flex-wrap items-center">
-                                <span class="flex items-center mr-3">
-                                    <i class="far fa-clock mr-1"></i>${timeStr}
-                                </span>
-                                <span class="flex items-center mr-3">
-                                    <i class="fas fa-phone mr-1"></i>${phone}
-                                </span>
-                                <span class="flex items-center">
-                                    <i class="fas fa-utensils mr-1"></i>Mesa ${table}
-                                </span>
-                            </p>
-                        </div>
-                        ${event.htmlLink ? `
-                        <a href="${event.htmlLink}" target="_blank" class="ml-2 text-blue-500 hover:text-blue-700 flex-shrink-0" title="Ver en Google Calendar">
-                            <i class="fas fa-external-link-alt"></i>
-                        </a>` : ''}
-                    </div>
-                </div>
-            `;
-        } catch (error) {
-            console.error('Error procesando evento:', error, event);
-            return '';
-        }
-    }).join('');
-    
-    container.innerHTML = eventsHTML || '<p class="text-gray-500 dark:text-gray-400 py-4">No se pudieron cargar las reservas</p>';
-}
+
 
 // Helper functions
 function getStatusBadgeClass(status) {
     const statusToUse = status || 'pendiente';
     const statusClasses = {
-        'completado': 'bg-green-100 text-green-800',
-        'en_proceso': 'bg-yellow-100 text-yellow-800',
-        'cancelado': 'bg-red-100 text-red-800',
+        'completado': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+        'en_proceso': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+        'en-preparacion': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+        'cancelado': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
         'pendiente': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
     };
     return statusClasses[statusToUse] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+}
+
+function getStatusLabel(status) {
+    const statusLabels = {
+        'completado': 'Completado',
+        'en_proceso': 'En Proceso',
+        'en-preparacion': 'En Preparación',
+        'cancelado': 'Cancelado',
+        'pendiente': 'Pendiente'
+    };
+    return statusLabels[status] || 'Desconocido';
 }
 
 function formatTime(timeString) {
@@ -604,10 +437,10 @@ async function addOrder(e) {
     const form = e.target;
     const formData = new FormData(form);
     const orderData = {
-        customer_name: formData.get('customer_name'),
+        nombre: formData.get('customer_name'),
         phone: formData.get('phone'),
         direccion: formData.get('direccion'),
-        items: formData.get('items'),
+        items: JSON.stringify(formData.get('items').split(',').map(item => item.trim())),
         total: parseFloat(formData.get('total')),
         status: 'pendiente',
         created_at: new Date().toISOString()
@@ -688,11 +521,11 @@ async function addReservation(e) {
     
     // Crear objeto de datos para la reserva
     const reservationData = {
-        summary: `${formData.get('customer_name')} (${formData.get('people')} pax) Mesa ${formData.get('table') || 'S/N'}`,
-        description: `Teléfono: ${formData.get('phone')}\n` +
-                    `Personas: ${formData.get('people')}\n` +
-                    `Mesa: ${formData.get('table') || 'Sin asignar'}\n` +
-                    `Observaciones: ${formData.get('observations') || 'Ninguna'}`,
+        summary: `${formData.get('customer_name')} (${formData.get('people')} pax) Mesa ${formData.get('table') || 'S/N'}`, 
+        description: `Teléfono: ${formData.get('phone')}\n` + 
+                    `Personas: ${formData.get('people')}\n` + 
+                    `Mesa: ${formData.get('table') || 'Sin asignar'}\n` + 
+                    `Observaciones: ${formData.get('observations') || 'Ninguna'}`, 
         start: {
             dateTime: new Date(`${formData.get('date')}T${formData.get('time')}:00`).toISOString(),
             timeZone: 'Europe/Madrid'
@@ -785,13 +618,13 @@ async function loadMenuItems() {
     thead.classList.add('bg-gray-50', 'dark:bg-gray-700');
     thead.innerHTML = `
         <tr>
-            <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ID</th>
+            <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20">ID</th>
             <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Nombre</th>
-            <th class="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Descripción</th>
-            <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Precio</th>
-            <th class="hidden sm:table-cell px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Categoría</th>
-            <th class="hidden sm:table-cell px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Stock</th>
-            <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Acciones</th>
+            <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Ingredientes</th>
+            <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-24">Precio</th>
+            <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Categoría</th>
+            <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-28">Stock</th>
+            <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">Acciones</th>
         </tr>
     `;
     menuTable.appendChild(thead);
@@ -855,29 +688,46 @@ async function loadMenuItems() {
             const categoria = item.categoria || 'N/A';
             const stock = item.stock || 0;
             
+            row.className = 'hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors';
             row.innerHTML = `
-                <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm">${item.id}</td>
-                <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm">${nombre}</td>
-                <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm">
+                <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm dark:text-white font-medium">${item.id}</td>
+                <td class="px-3 md:px-6 py-4 text-sm dark:text-white">
+                    <div class="font-medium">${nombre}</div>
+                </td>
+                <td class="px-3 md:px-6 py-4 text-sm">
                     <div class="relative group">
-                        <button class="bg-blue-500 text-white px-2 py-1 rounded text-xs">Ingredientes</button>
-                        <div class="absolute z-10 hidden group-hover:block bg-white text-gray-700 border rounded-lg p-4 w-80 right-0">
-                            <p class="text-sm whitespace-normal">${ingredientes}</p>
+                        <span class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 cursor-help transition inline-flex items-center">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            <span class="text-xs">Ingredientes</span>
+                        </span>
+                        <div class="fixed z-50 hidden group-hover:block bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-2 border-gray-300 dark:border-gray-500 rounded-lg p-4 w-80 lg:w-96 shadow-2xl pointer-events-none" style="margin-top: -80px; margin-left: 100px;">
+                            <p class="text-sm whitespace-normal leading-relaxed">${ingredientes}</p>
                         </div>
                     </div>
                 </td>
-                <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm">$${parseFloat(precio).toFixed(2)}</td>
-                <td class="hidden sm:table-cell px-3 md:px-6 py-4 whitespace-nowrap text-sm">${categoria}</td>
-                <td class="hidden sm:table-cell px-3 md:px-6 py-4 whitespace-nowrap text-sm">
-                    <input type="number" value="${stock}" onchange="updateStock(${item.id}, this.value)" style="width: 60px;" class="px-2 py-1 border rounded dark:bg-gray-800 dark:text-white" />
+                <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm dark:text-white font-semibold text-green-600 dark:text-green-400">$${parseFloat(precio).toFixed(2)}</td>
+                <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm dark:text-white">
+                    <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-xs font-medium">
+                        ${categoria}
+                    </span>
+                </td>
+                <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm">
+                    <input type="number" value="${stock}" onchange="updateStock(${item.id}, this.value)" 
+                           class="w-20 px-2 py-1 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                 </td>
                 <td class="px-3 md:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button onclick="editMenuItem(${item.id})" class="text-indigo-600 hover:text-indigo-900 mr-3">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button onclick="deleteMenuItem(${item.id})" class="text-red-600 hover:text-red-900">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                    <div class="flex justify-end space-x-2">
+                        <button onclick="editMenuItem(${item.id})" 
+                                class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900 rounded transition"
+                                title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteMenuItem(${item.id})" 
+                                class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-2 hover:bg-red-50 dark:hover:bg-red-900 rounded transition"
+                                title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </td>
             `;
             menuItemsContainer.appendChild(row);
@@ -929,35 +779,36 @@ async function loadOrders() {
         
         orders.forEach(order => {
             const row = document.createElement('tr');
+            row.className = 'hover:bg-gray-50 dark:hover:bg-gray-700';
             row.innerHTML = `
-                <td class="px-3 md:px-6 py-4 whitespace-nowrap">${order.id}</td>
-                <td class="px-3 md:px-6 py-4 whitespace-nowrap">${order.customer_name || 'Cliente'}</td>
-                <td class="px-3 md:px-6 py-4 whitespace-nowrap">${order.phone || 'N/A'}</td>
-                <td class="hidden md:table-cell px-6 py-4">${order.direccion || 'N/A'}</td>
-                <td class="px-3 md:px-6 py-4">
+                <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm dark:text-white">${order.id}</td>
+                <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm dark:text-white">${order.customer_name || 'Cliente'}</td>
+                <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm dark:text-white">${order.phone || 'N/A'}</td>
+                <td class="hidden md:table-cell px-6 py-4 text-sm dark:text-white">${order.direccion || 'N/A'}</td>
+                <td class="px-3 md:px-6 py-4 text-sm dark:text-white">
                     <div class="max-w-xs truncate" title="${order.items}">
                         ${order.items || 'N/A'}
                     </div>
                 </td>
-                <td class="px-3 md:px-6 py-4 whitespace-nowrap">$${parseFloat(order.total || 0).toFixed(2)}</td>
-                <td class="hidden sm:table-cell px-3 md:px-6 py-4 whitespace-nowrap">
-                    <span class="px-2 py-1 text-xs rounded-full ${getStatusBadgeClass(order.status)}">
-                        ${order.status || 'Pendiente'}
+                <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm dark:text-white">$${parseFloat(order.total || 0).toFixed(2)}</td>
+                <td class="px-3 md:px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 py-1 text-xs font-medium rounded-full ${getStatusBadgeClass(order.status)}">
+                        ${getStatusLabel(order.status)}
                     </span>
                 </td>
-                <td class="px-3 md:px-6 py-4 whitespace-nowrap">
-                    ${new Date(order.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm dark:text-white">
+                    ${new Date(order.created_at).toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'})}
                 </td>
                 <td class="px-3 md:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div class="flex space-x-2">
+                    <div class="flex justify-end space-x-2">
                         <select onchange="updateOrderStatus(${order.id}, this.value)" 
-                                class="text-xs p-1 border rounded bg-white dark:bg-gray-800">
+                                class="text-xs p-1 border rounded bg-white dark:bg-gray-800 dark:text-white dark:border-gray-600">
                             <option value="pendiente" ${order.status === 'pendiente' ? 'selected' : ''}>Pendiente</option>
-                            <option value="en_proceso" ${order.status === 'en_proceso' ? 'selected' : ''}>En proceso</option>
+                            <option value="en_proceso" ${order.status === 'en_proceso' || order.status === 'en-preparacion' ? 'selected' : ''}>En Proceso</option>
                             <option value="completado" ${order.status === 'completado' ? 'selected' : ''}>Completado</option>
                             <option value="cancelado" ${order.status === 'cancelado' ? 'selected' : ''}>Cancelado</option>
                         </select>
-                        <button onclick="cancelOrder(${order.id})" class="text-red-600 hover:text-red-900">
+                        <button onclick="cancelOrder(${order.id})" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
@@ -983,12 +834,12 @@ async function loadReservations() {
         reservationsList.innerHTML = '<tr><td colspan="8" class="px-6 py-4 text-center">Cargando reservas...</td></tr>';
         
         // Cargar eventos del calendario para los próximos 30 días
-        const now = new Date();
-        now.setHours(0, 0, 0, 0); // Set to the beginning of the day
-        const future = new Date(now);
-        future.setHours(23, 59, 59, 999); // Set to the end of the day
-
-        const events = await loadCalendarEvents(now.toISOString(), future.toISOString());
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const futureDate = new Date(today);
+        futureDate.setDate(today.getDate() + 30);
+        
+        const events = await loadCalendarEvents(today.toISOString(), futureDate.toISOString());
         
         // Limpiar la lista
         reservationsList.innerHTML = '';
@@ -999,7 +850,7 @@ async function loadReservations() {
             reservationsList.innerHTML = `
                 <tr>
                     <td colspan="8" class="px-6 py-4 text-center text-gray-500">
-                        No hay reservas para hoy
+                        No hay reservas programadas para los próximos 30 días
                     </td>
                 </tr>`;
             if (summaryFoot) summaryFoot.innerHTML = ''; // Clear summary
@@ -1082,7 +933,7 @@ async function loadReservations() {
                     <td class="px-3 md:px-6 py-4 whitespace-nowrap">
                         <div class="font-medium text-gray-900 dark:text-white">${customerName || 'Cliente'}</div>
                     </td>
-                    <td class="hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                    <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
                         ${phone}
                     </td>
                     <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
@@ -1091,7 +942,7 @@ async function loadReservations() {
                     <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
                         ${formattedTime}
                     </td>
-                    <td class="hidden sm:table-cell px-3 md:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                    <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
                         ${people} ${people === 1 ? 'persona' : 'personas'}
                     </td>
                     <td class="hidden sm:table-cell px-3 md:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
@@ -1116,9 +967,9 @@ async function loadReservations() {
         if (summaryFoot) {
             summaryFoot.innerHTML = `
                 <tr class="bg-gray-50 dark:bg-gray-700 border-t-2 border-gray-200 dark:border-gray-600">
-                    <td colspan="5" class="px-3 md:px-6 py-3 text-right text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total Comensales</td>
-                    <td class="px-3 md:px-6 py-3 text-xs font-bold text-gray-900 dark:text-white">${totalPeople}</td>
-                    <td colspan="2"></td>
+                    <td colspan="4" class="px-3 md:px-6 py-3 text-right text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total Comensales:</td>
+                    <td class="hidden sm:table-cell px-3 md:px-6 py-3 text-xs font-bold text-gray-900 dark:text-white">${totalPeople}</td>
+                    <td colspan="3" class="sm:hidden px-3 md:px-6 py-3 text-xs font-bold text-gray-900 dark:text-white">${totalPeople}</td>
                 </tr>
             `;
         }
@@ -1137,29 +988,6 @@ async function loadReservations() {
                 </tr>`;
         }
     }
-}
-
-// CRUD Operations
-async function editMenuItem(id) {
-    const item = menuItems.find(i => i.id === id);
-    if (!item) return;
-    
-    const form = document.getElementById('add-menu-item-form');
-    if (!form) return;
-    
-    // Populate form
-    form.elements['name'].value = item.nombre || '';
-    form.elements['description'].value = item.ingredientes || '';
-    form.elements['price'].value = item.precio || '';
-    form.elements['category'].value = item.categoria || 'entradas';
-    form.elements['stock'].value = item.stock || 0;
-    
-    // Change form to update mode
-    form.dataset.editId = id;
-    form.querySelector('button[type="submit"]').textContent = 'Actualizar';
-    
-    // Show modal
-    showAddMenuItemModal();
 }
 
 async function deleteMenuItem(id) {
@@ -1318,40 +1146,6 @@ async function editReservation(id) {
     }
 }
 
-// Load calendar events from the API
-async function loadCalendarEvents(timeMin, timeMax) {
-    try {
-        console.log('Cargando eventos del calendario...');
-        
-        // Use provided range, or default to today
-        const now = new Date();
-        const endOfDay = new Date(now);
-        endOfDay.setHours(23, 59, 59, 999);
-
-        const min = timeMin || now.toISOString();
-        const max = timeMax || endOfDay.toISOString();
-        
-        console.log(`Buscando eventos entre ${min} y ${max}`);
-        
-        // Hacer la petición a la API de reservas
-        const events = await apiRequest(`/reservations?timeMin=${encodeURIComponent(min)}&timeMax=${encodeURIComponent(max)}`);
-        
-        // Verificar la respuesta
-        if (!Array.isArray(events)) {
-            console.error('La respuesta de la API no es un array:', events);
-            return [];
-        }
-        
-        console.log('Eventos del calendario cargados:', events);
-        
-        return events;
-    } catch (error) {
-        console.error('Error al cargar eventos del calendario:', error);
-        showNotification('Error al cargar eventos del calendario', 'error');
-        return [];
-    }
-}
-
 // Update the UI with calendar events in a table format
 function updateCalendarEventsUI(events) {
     try {
@@ -1366,24 +1160,28 @@ function updateCalendarEventsUI(events) {
             return;
         }
         
-        // Ordenar eventos por fecha
-        const sortedEvents = [...events].sort((a, b) => new Date(a.start) - new Date(b.start));
+
         
-        // Mostrar todos los eventos del día actual
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        const upcomingEvents = sortedEvents.filter(event => {
+        const upcomingEvents = events.filter(event => {
+            if (!event.start) return false;
             const eventDate = new Date(event.start);
             eventDate.setHours(0, 0, 0, 0);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
             return eventDate.getTime() === today.getTime();
+        });
+
+        // Ordenar eventos por fecha
+        const sortedEvents = [...upcomingEvents].sort((a, b) => {
+            if (!a.start || !b.start) return 0;
+            return new Date(a.start) - new Date(b.start);
         });
         
         // Función para extraer información del título y descripción
         const parseEventInfo = (event) => {
             const title = event.summary || 'Reserva';
-            const startDate = new Date(event.start.dateTime || event.start.date);
-            const endDate = new Date(event.end.dateTime || event.end.date);
+            const startDate = event.start ? new Date(event.start) : null;
+            const endDate = event.end ? new Date(event.end) : null;
             
             // Extraer información adicional del título
             const titleMatch = title.match(/(.*?)\s*\((\d+)\s*pax\)/i);
@@ -1401,21 +1199,19 @@ function updateCalendarEventsUI(events) {
                 customerName,
                 people,
                 table: table || 'S/N',
-                startTime: startDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                startTime: startDate ? startDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '--:--',
                 date: startDate,
                 event
             };
         };
-        
-        // Generar filas de la tabla
-        const tableRows = upcomingEvents.map(event => {
+        const tableRows = sortedEvents.map(event => {
             const info = parseEventInfo(event);
             return `
                 <tr class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td class="py-3 px-2">
                         <div class="font-medium text-gray-900 dark:text-white">${info.customerName}</div>
                         <div class="text-xs text-gray-500 dark:text-gray-400">
-                            ${info.date.toLocaleDateString('es-ES', { weekday: 'short', day: '2-digit', month: 'short' })}
+                            ${info.date ? info.date.toLocaleDateString('es-ES', { weekday: 'short', day: '2-digit', month: 'short' }) : ''}
                         </div>
                     </td>
                     <td class="py-3 px-2">
@@ -1448,7 +1244,6 @@ function updateCalendarEventsUI(events) {
             `;
         }).join('');
         
-        // Crear la tabla completa
         const tableHTML = `
             <div class="overflow-x-auto">
                 <table class="min-w-full">
@@ -1475,7 +1270,44 @@ function updateCalendarEventsUI(events) {
     }
 }
 
-// Google Calendar Integration
+async function loadCalendarEvents(timeMin, timeMax) {
+    try {
+        console.log('Cargando eventos del calendario...');
+        
+        // Use provided range, or default to today + 30 days
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const futureDate = new Date(today);
+        futureDate.setDate(today.getDate() + 30);
+        futureDate.setHours(23, 59, 59, 999);
+
+        const min = timeMin || today.toISOString();
+        const max = timeMax || futureDate.toISOString();
+        
+        console.log(`Buscando eventos entre ${min} y ${max}`);
+        
+        // Hacer la petición a la API de reservas
+        const events = await apiRequest(`/reservations?timeMin=${encodeURIComponent(min)}&timeMax=${encodeURIComponent(max)}`);
+        
+        // Verificar la respuesta
+        if (!Array.isArray(events)) {
+            console.error('La respuesta de la API no es un array:', events);
+            return [];
+        }
+        
+        console.log('Eventos del calendario cargados:', events.length, 'eventos');
+        
+        // Guardar eventos en la variable global
+        calendarEvents = events;
+        
+        return events;
+    } catch (error) {
+        console.error('Error al cargar eventos del calendario:', error);
+        showNotification('Error al cargar eventos del calendario', 'error');
+        return [];
+    }
+}
+
 async function syncWithGoogleCalendar() {
     try {
         // This would be implemented to sync with Google Calendar

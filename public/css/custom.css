@@ -1,0 +1,176 @@
+/* Custom Styles for Restaurant Dashboard */
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-container {
+    background-color: white;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 28rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.dark .modal-container {
+    background-color: rgb(31, 41, 55);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.modal-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: rgb(17, 24, 39);
+}
+
+.dark .modal-title {
+    color: rgb(255, 255, 255);
+}
+
+.modal-close-btn {
+    color: rgb(107, 114, 128);
+    transition: color 150ms;
+}
+
+.modal-close-btn:hover {
+    color: rgb(55, 65, 81);
+}
+
+.dark .modal-close-btn {
+    color: rgb(156, 163, 175);
+}
+
+.dark .modal-close-btn:hover {
+    color: rgb(209, 213, 219);
+}
+
+/* Form Styles */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-label {
+    display: block;
+    color: rgb(55, 65, 81);
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.dark .form-label {
+    color: rgb(209, 213, 219);
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid rgb(209, 213, 219);
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    transition: border-color 150ms, box-shadow 150ms;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+    outline: none;
+    border-color: rgb(59, 130, 246);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.dark .form-input,
+.dark .form-select,
+.dark .form-textarea {
+    background-color: rgb(55, 65, 81);
+    border-color: rgb(75, 85, 99);
+    color: rgb(255, 255, 255);
+}
+
+.dark .form-input:focus,
+.dark .form-select:focus,
+.dark .form-textarea:focus {
+    border-color: rgb(96, 165, 250);
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 4rem;
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    transition: all 150ms;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background-color: rgb(59, 130, 246);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: rgb(37, 99, 235);
+}
+
+.btn-secondary {
+    background-color: transparent;
+    color: rgb(55, 65, 81);
+    border: 1px solid rgb(209, 213, 219);
+}
+
+.btn-secondary:hover {
+    background-color: rgb(249, 250, 251);
+}
+
+.dark .btn-secondary {
+    color: rgb(209, 213, 219);
+    border-color: rgb(75, 85, 99);
+}
+
+.dark .btn-secondary:hover {
+    background-color: rgb(55, 65, 81);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Utility Classes */
+.hidden {
+    display: none;
+}
+
+.text-error {
+    color: rgb(239, 68, 68);
+}
+
+.dark .text-error {
+    color: rgb(248, 113, 113);
+}

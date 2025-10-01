@@ -48,21 +48,17 @@ const { supabase } = require('../config/database');
 // GET /api/orders - Obtener todas las órdenes
 router.get('/', async (req, res) => {
   try {
-    const { date } = req.query;
+    const { startDate, endDate } = req.query;
     let query = supabase
       .from('orders')
-      .select('*')
+      .select('id, created_at, nombre, total, status, items, telefono, direccion')
       .order('created_at', { ascending: false });
     
     // Filtrar por fecha si se proporciona
-    if (date) {
-      const startOfDay = new Date(date);
-      const endOfDay = new Date(date);
-      endOfDay.setDate(endOfDay.getDate() + 1);
-      
+    if (startDate && endDate) {
       query = query
-        .gte('created_at', startOfDay.toISOString())
-        .lt('created_at', endOfDay.toISOString());
+        .gte('created_at', new Date(startDate).toISOString())
+        .lt('created_at', new Date(endDate).toISOString());
     }
     
     const { data, error } = await query;
@@ -71,11 +67,14 @@ router.get('/', async (req, res) => {
     
     // Formatear los datos para el frontend
     const formattedData = data.map(order => ({
-      ...order,
-      items: Array.isArray(order.items) ? order.items.join(', ') : order.items,
+      id: order.id,
+      created_at: order.created_at,
       customer_name: order.nombre,
+      total: order.total,
+      status: order.status || 'pendiente',
+      items: order.items,
       phone: order.telefono,
-      status: order.status || 'pendiente'
+      direccion: order.direccion
     }));
     
     res.json({ data: formattedData });
@@ -96,7 +95,7 @@ router.post('/', async (req, res) => {
       .from('orders')
       .insert([{
         direccion,
-        items: JSON.stringify(items),
+        items: items,
         total,
         nombre,
         telefono
@@ -142,78 +141,6 @@ router.put('/:id', async (req, res) => {
     res.json(data);
   } catch (error) {
     console.error('Error actualizando orden:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
-  }
-});
-
-// GET /api/orders/today - Obtener reservas de hoy
-router.get('/today', async (req, res) => {
-  try {
-    if (!auth) {
-      return res.status(503).json({ 
-        error: 'Google Calendar service not configured',
-        message: 'Please configure Google Calendar credentials'
-      });
-    }
-    
-    const calendar = google.calendar('v3');
-    const client = await auth.getClient();
-
-    // Use calendar ID from env or default to 'primary'
-    const calendarId = process.env.GOOGLE_CALENDAR_ID || 'primary';
-    console.log(`Using calendar ID: ${calendarId}`);
-
-    // Calculate start and end of today in ISO string with timezone offset
-    const now = new Date();
-    const timezoneOffset = now.getTimezoneOffset() * 60000; // in ms
-    const startOfDay = new Date(now.getTime() - timezoneOffset);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(startOfDay);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    const timeMin = startOfDay.toISOString();
-    const timeMax = endOfDay.toISOString();
-
-    console.log(`Fetching events from ${timeMin} to ${timeMax}`);
-
-    const events = await calendar.events.list({
-      auth: client,
-      calendarId: calendarId,
-      timeMin: timeMin,
-      timeMax: timeMax,
-      maxResults: 100,
-      singleEvents: true,
-      orderBy: 'startTime',
-    });
-
-    console.log(`Found ${events.data.items.length} events`);
-
-    res.json(events.data.items);
-  } catch (error) {
-    console.error('Error obteniendo reservas de hoy:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
-  }
-});
-
-// DELETE /api/orders/:id - Eliminar orden
-router.delete('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { data, error } = await supabase
-      .from('orders')
-      .delete()
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) {
-      if (error.code === 'PGRST116') {
-        return res.status(404).json({ error: 'Orden no encontrada' });
-      }
-      throw error;
-    }
-    res.json({ message: 'Orden eliminada correctamente' });
-  } catch (error) {
-    console.error('Error eliminando orden:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
