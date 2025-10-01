@@ -39,5 +39,16 @@
       "src": "^/(.*)",
       "dest": "/public/Dashboard.html"
     }
-  ]
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "build": {
+    "env": {
+      "PORT": "3000",
+      "GOOGLE_CALENDAR_ID": "@google_calendar_id",
+      "SUPABASE_URL": "@supabase_url",
+      "SUPABASE_KEY": "@supabase_key"
+    }
+  }
 }
