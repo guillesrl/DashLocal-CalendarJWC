@@ -314,28 +314,47 @@ function showNotification(message, type = 'success') {
 function initializeNavigation() {
     console.log('Inicializando navegación...');
     
-    // Configurar manejadores de eventos para los enlaces de navegación
-    document.querySelectorAll('nav a[data-section]').forEach(link => {
-        // Remover cualquier manejador de eventos existente para evitar duplicados
+    // Función para manejar la navegación
+    function handleNavigation(link) {
+        const sectionId = link.getAttribute('data-section');
+        console.log(`Navegando a la sección: ${sectionId}`);
+        showSection(sectionId);
+        
+        // Actualizar enlaces activos
+        document.querySelectorAll('.nav-link').forEach(navLink => {
+            navLink.classList.toggle('active', navLink.getAttribute('data-section') === sectionId);
+        });
+        
+        // Cerrar el menú móvil si está abierto
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+        if (window.innerWidth < 768) { // Solo en móviles
+            sidebar.classList.add('-translate-x-full');
+            if (sidebarOverlay) {
+                sidebarOverlay.classList.add('hidden');
+            }
+        }
+    }
+    
+    // Configurar manejadores de eventos para los enlaces de navegación del sidebar
+    document.querySelectorAll('#sidebar nav a[data-section]').forEach(link => {
         const newLink = link.cloneNode(true);
         link.parentNode.replaceChild(newLink, link);
         
-        // Agregar el manejador de eventos al nuevo elemento
         newLink.addEventListener('click', (e) => {
             e.preventDefault();
-            const sectionId = newLink.getAttribute('data-section');
-            console.log(`Navegando a la sección: ${sectionId}`);
-            showSection(sectionId);
-            
-            // Cerrar el menú móvil si está abierto
-            const sidebar = document.getElementById('sidebar');
-            const sidebarOverlay = document.getElementById('sidebar-overlay');
-            if (window.innerWidth < 768) { // Solo en móviles
-                sidebar.classList.add('-translate-x-full');
-                if (sidebarOverlay) {
-                    sidebarOverlay.classList.add('hidden');
-                }
-            }
+            handleNavigation(newLink);
+        });
+    });
+    
+    // Configurar manejadores de eventos para los enlaces de navegación móvil
+    document.querySelectorAll('#mobile-nav a[data-section]').forEach(link => {
+        const newLink = link.cloneNode(true);
+        link.parentNode.replaceChild(newLink, link);
+        
+        newLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            handleNavigation(newLink);
         });
     });
 }
@@ -618,13 +637,13 @@ async function loadMenuItems() {
     thead.classList.add('bg-gray-50', 'dark:bg-gray-700');
     thead.innerHTML = `
         <tr>
-            <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20">ID</th>
-            <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Nombre</th>
-            <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Ingredientes</th>
-            <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-24">Precio</th>
-            <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Categoría</th>
-            <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-28">Stock</th>
-            <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">Acciones</th>
+            <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase" style="width: 4%;">ID</th>
+            <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase" style="width: 28%;">Nombre</th>
+            <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase" style="width: 10%;">Ingredientes</th>
+            <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase" style="width: 9%;">Precio</th>
+            <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase" style="width: 15%;">Categoría</th>
+            <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase" style="width: 8%;">Stock</th>
+            <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase" style="width: 11%;">Acciones</th>
         </tr>
     `;
     menuTable.appendChild(thead);
@@ -690,42 +709,42 @@ async function loadMenuItems() {
             
             row.className = 'hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors';
             row.innerHTML = `
-                <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm dark:text-white font-medium">${item.id}</td>
-                <td class="px-3 md:px-6 py-4 text-sm dark:text-white">
-                    <div class="font-medium">${nombre}</div>
+                <td class="px-2 py-2 whitespace-nowrap text-sm dark:text-white font-medium">${item.id}</td>
+                <td class="px-2 py-2 text-sm dark:text-white">
+                    <div class="font-medium truncate">${nombre}</div>
                 </td>
-                <td class="px-3 md:px-6 py-4 text-sm">
-                    <div class="relative group">
-                        <span class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 cursor-help transition inline-flex items-center">
+                <td class="px-2 py-2 text-sm text-center">
+                    <div class="relative group inline-block">
+                        <span class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 cursor-help transition inline-flex items-center text-xs">
                             <i class="fas fa-info-circle mr-1"></i>
-                            <span class="text-xs">Ingredientes</span>
+                            Ver
                         </span>
                         <div class="fixed z-50 hidden group-hover:block bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-2 border-gray-300 dark:border-gray-500 rounded-lg p-4 w-80 lg:w-96 shadow-2xl pointer-events-none" style="margin-top: -80px; margin-left: 100px;">
                             <p class="text-sm whitespace-normal leading-relaxed">${ingredientes}</p>
                         </div>
                     </div>
                 </td>
-                <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm dark:text-white font-semibold text-green-600 dark:text-green-400">$${parseFloat(precio).toFixed(2)}</td>
-                <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm dark:text-white">
-                    <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-xs font-medium">
+                <td class="px-2 py-2 whitespace-nowrap text-sm dark:text-white font-semibold text-green-600 dark:text-green-400">$${parseFloat(precio).toFixed(2)}</td>
+                <td class="px-2 py-2 whitespace-nowrap text-sm dark:text-white text-center">
+                    <span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-xs font-medium inline-block">
                         ${categoria}
                     </span>
                 </td>
-                <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm">
+                <td class="px-2 py-2 whitespace-nowrap text-sm text-center">
                     <input type="number" value="${stock}" onchange="updateStock(${item.id}, this.value)" 
-                           class="w-20 px-2 py-1 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                           class="w-full max-w-16 px-2 py-0.5 text-sm text-center border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                 </td>
-                <td class="px-3 md:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div class="flex justify-end space-x-2">
+                <td class="px-2 py-2 whitespace-nowrap text-center text-sm font-medium">
+                    <div class="flex justify-center gap-1">
                         <button onclick="editMenuItem(${item.id})" 
-                                class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900 rounded transition"
+                                class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 p-1 hover:bg-indigo-50 dark:hover:bg-indigo-900 rounded transition"
                                 title="Editar">
-                            <i class="fas fa-edit"></i>
+                            <i class="fas fa-edit text-sm"></i>
                         </button>
                         <button onclick="deleteMenuItem(${item.id})" 
-                                class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-2 hover:bg-red-50 dark:hover:bg-red-900 rounded transition"
+                                class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-1 hover:bg-red-50 dark:hover:bg-red-900 rounded transition"
                                 title="Eliminar">
-                            <i class="fas fa-trash"></i>
+                            <i class="fas fa-trash text-sm"></i>
                         </button>
                     </div>
                 </td>
@@ -927,9 +946,6 @@ async function loadReservations() {
                 const row = document.createElement('tr');
                 row.className = 'border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800';
                 row.innerHTML = `
-                    <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                        ${event.id.substring(0, 8)}...
-                    </td>
                     <td class="px-3 md:px-6 py-4 whitespace-nowrap">
                         <div class="font-medium text-gray-900 dark:text-white">${customerName || 'Cliente'}</div>
                     </td>
@@ -944,6 +960,9 @@ async function loadReservations() {
                     </td>
                     <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
                         ${people} ${people === 1 ? 'persona' : 'personas'}
+                    </td>
+                    <td class="px-3 md:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                        ${event.id.substring(0, 8)}...
                     </td>
                     <td class="hidden sm:table-cell px-3 md:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
                         ${tableNumber || 'No'}

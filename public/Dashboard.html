@@ -17,6 +17,16 @@
     <script src="js/app.js" defer></script>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 min-h-screen transition-colors duration-300">
+    <!-- Mobile Navigation -->
+    <nav id="mobile-nav" class="md:hidden">
+        <ul>
+            <li><a href="#" data-section="dashboard" class="nav-link"><i class="fas fa-tachometer-alt mr-1"></i> Dashboard</a></li>
+            <li><a href="#" data-section="menu" class="nav-link"><i class="fas fa-utensils mr-1"></i> Menú</a></li>
+            <li><a href="#" data-section="orders" class="nav-link"><i class="fas fa-clipboard-list mr-1"></i> Pedidos</a></li>
+            <li><a href="#" data-section="reservations" class="nav-link"><i class="fas fa-calendar-alt mr-1"></i> Reservas</a></li>
+        </ul>
+    </nav>
+
     <!-- Mobile menu button -->
     <div class="md:hidden bg-dark text-white p-4 flex items-center justify-between">
         <h1 class="text-xl font-bold">Restaurant</h1>
@@ -29,7 +39,7 @@
             </button>
         </div>
     </div>
-    
+    <br><br>
     <div class="flex">
         <!-- Sidebar -->
         <aside id="sidebar" class="fixed md:relative w-64 bg-dark text-white min-h-screen p-4 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out z-50">
@@ -196,7 +206,7 @@
 
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
                     <div class="overflow-x-auto">
-                        <table class="min-w-full" id="menu-table">
+                        <table class="w-full table-fixed" id="menu-table">
                             <!-- La tabla se genera dinámicamente con JavaScript -->
                         </table>
                     </div>
@@ -244,12 +254,12 @@
                         <table class="min-w-full">
                             <thead class="bg-gray-50 dark:bg-gray-700">
                                 <tr class="border-b-2 border-gray-200 dark:border-gray-600">
-                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ID</th>
                                     <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Cliente</th>
                                     <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Teléfono</th>
                                     <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Fecha</th>
                                     <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Hora</th>
                                     <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Personas</th>
+                                    <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ID</th>
                                     <th class="hidden sm:table-cell px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Mesa</th>
                                     <th class="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Acciones</th>
                                 </tr>
