@@ -6,26 +6,41 @@ const { JWT } = require('google-auth-library');
 class GoogleCalendarBackendService {
     constructor() {
         this.calendarId = process.env.GOOGLE_CALENDAR_ID;
-        this.serviceAccountKeyPath = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH || './service-account-key.json';
         this.calendar = null;
         this.jwtClient = null;
+        
+        // Verificar variables de entorno requeridas
+        this.requiredEnvVars = [
+            'GOOGLE_CALENDAR_ID',
+            'GOOGLE_SERVICE_ACCOUNT_EMAIL',
+            'GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY'
+        ];
+        
+        this.missingEnvVars = this.requiredEnvVars.filter(
+            envVar => !process.env[envVar]
+        );
+        
+        if (this.missingEnvVars.length > 0) {
+            console.error('❌ Faltan variables de entorno requeridas:', this.missingEnvVars);
+        }
     }
 
     async initialize() {
         try {
+            if (this.missingEnvVars.length > 0) {
+                throw new Error(`Faltan variables de entorno requeridas: ${this.missingEnvVars.join(', ')}`);
+            }
+            
             console.log('🔧 Inicializando Google Calendar Service...');
             console.log('📅 Calendar ID:', this.calendarId);
             
-            // Cargar credenciales
-            let credentials;
-            const keyFile = path.resolve(this.serviceAccountKeyPath);
+            // Crear objeto de credenciales desde variables de entorno
+            const credentials = {
+                client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+                private_key: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY.replace(/\\n/g, '\n')
+            };
             
-            if (fs.existsSync(keyFile)) {
-                credentials = JSON.parse(fs.readFileSync(keyFile, 'utf8'));
-                console.log('✅ Credenciales cargadas desde:', keyFile);
-            } else {
-                throw new Error('No se encontró el archivo de credenciales');
-            }
+            console.log('✅ Credenciales configuradas desde variables de entorno');
             
             // Configurar autenticación JWT
             console.log('🔑 Configurando autenticación JWT...');
