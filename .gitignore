@@ -51,7 +51,9 @@ Thumbs.db
 service-account-key.json
 # ENVIRONMENT VARIABLES
 .env
-# Local Netlify folder
-.netlify
+# Local Vercel folder
 .vercel
+
+# Credentials
 credentials.json
+service-account-key.json

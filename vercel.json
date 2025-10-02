@@ -1,35 +1,9 @@
 {
   "version": 2,
   "builds": [
-    {
-      "src": "api/**/*.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "public/**",
-      "use": "@vercel/static"
-    }
+    { "src": "server.js", "use": "@vercel/node" }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "/api/server.js" },
-    { "src": "^/css/(.*)", "dest": "/public/css/$1" },
-    { "src": "^/js/(.*)", "dest": "/public/js/$1" },
-    { "src": "^/Dashboard.html", "dest": "/public/Dashboard.html" },
-    { "src": "^/$", "dest": "/public/Dashboard.html" },
-    { "src": "^/(.*)", "dest": "/public/Dashboard.html" }
-  ],
-  "build": {
-    "env": {
-      "NODE_ENV": "production"
-    }
-  },
-  "env": {
-    "NODE_ENV": "production",
-    "PORT": "3000"
-  },
-  "functions": {
-    "api/*.js": {
-      "includeFiles": "config/**"
-    }
-  }
+    { "src": "/(.*)", "dest": "server.js" }
+  ]
 }
