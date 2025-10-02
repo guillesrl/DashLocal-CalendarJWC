@@ -25,12 +25,7 @@
   },
   "env": {
     "NODE_ENV": "production",
-    "PORT": "3000",
-    "GOOGLE_CALENDAR_ID": "@google_calendar_id",
-    "GOOGLE_SERVICE_ACCOUNT_EMAIL": "@google_service_account_email",
-    "GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY": "@google_private_key",
-    "SUPABASE_URL": "@supabase_url",
-    "SUPABASE_KEY": "@supabase_key"
+    "PORT": "3000"
   },
   "functions": {
     "api/*.js": {
