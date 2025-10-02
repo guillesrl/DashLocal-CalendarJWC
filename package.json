@@ -6,7 +6,8 @@
     "watch": "npx tailwindcss watch -c tailwind.config.js",
     "start": "node api/server.js",
     "dev": "nodemon api/server.js",
-    "vercel-build": "npm install && npm run build"
+    "vercel-build": "npm install && npm run build",
+    "netlify-build": "npm install && npm run build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
