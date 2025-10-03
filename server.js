@@ -142,26 +142,34 @@ app.get('/api/debug/calendar-init', async (req, res) => {
     }
 });
 
-// Error handling middleware
+// Servir el archivo index.html para cualquier otra ruta (para SPA)
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Manejador de errores global
 app.use((err, req, res, next) => {
-    console.error('Unhandled error:', err);
-    res.status(500).json({ error: err.message, stack: err.stack });
+    console.error('❌ Error no manejado:', err);
+    res.status(500).json({
+        status: 'error',
+        message: 'Error interno del servidor',
+        ...(process.env.NODE_ENV === 'development' && { error: err.message, stack: err.stack })
+    });
 });
-
-// 404 handler for API routes
-app.use('/api/:any', (req, res) => {
-    res.status(404).json({ error: 'API endpoint not found', path: req.path });
-});
-
-// Catch-all for any other routes
-app.use((req, res) => {
-    res.status(404).json({ error: 'Endpoint not found', path: req.path });
-});
-
-module.exports = app;
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
-  console.log(`✅ Servidor escuchando en http://localhost:${PORT}`);
+const server = app.listen(PORT, () => {
+    console.log(`✅ Servidor escuchando en http://localhost:${PORT}`);
 });
+
+// Manejo de cierre correcto del servidor
+process.on('SIGTERM', () => {
+    console.log('🛑 Recibida señal SIGTERM. Cerrando servidor...');
+    server.close(() => {
+        console.log('👋 Servidor cerrado');
+        process.exit(0);
+    });
+});
+
+module.exports = app;
