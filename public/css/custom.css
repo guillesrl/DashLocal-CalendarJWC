@@ -1,305 +1,125 @@
-/* Custom Styles for Restaurant Dashboard */
-
-/* Remove number input arrows */
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
+/* Estilos generales */
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-input[type="number"] {
-    -moz-appearance: textfield;
-    appearance: textfield;
+/* Contenedor principal */
+.relative.w-full {
+  display: flex;
+  min-height: 100vh;
 }
 
-/* Modal Styles */
-.modal-overlay {
-    position: fixed;
-    inset: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
+/* Sidebar */
+#sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 14rem; /* 56 * 0.25rem = 14rem */
+  z-index: 40;
+  transition: transform 0.3s ease-in-out;
+  overflow-y: auto;
 }
 
-.modal-container {
-    background-color: white;
-    border-radius: 0.5rem;
-    padding: 1.5rem;
-    width: 100%;
-    max-width: 28rem;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
-
-.dark .modal-container {
-    background-color: rgb(31, 41, 55);
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-
-.modal-title {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: rgb(17, 24, 39);
-}
-
-.dark .modal-title {
-    color: rgb(255, 255, 255);
-}
-
-.modal-close-btn {
-    color: rgb(107, 114, 128);
-    transition: color 150ms;
-}
-
-.modal-close-btn:hover {
-    color: rgb(55, 65, 81);
-}
-
-.dark .modal-close-btn {
-    color: rgb(156, 163, 175);
-}
-
-.dark .modal-close-btn:hover {
-    color: rgb(209, 213, 219);
-}
-
-/* Form Styles */
-.form-group {
-    margin-bottom: 1rem;
-}
-
-.form-label {
-    display: block;
-    color: rgb(55, 65, 81);
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-}
-
-.dark .form-label {
-    color: rgb(209, 213, 219);
-}
-
-.form-input,
-.form-select,
-.form-textarea {
-    width: 100%;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid rgb(209, 213, 219);
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    transition: border-color 150ms, box-shadow 150ms;
-}
-
-.form-input:focus,
-.form-select:focus,
-.form-textarea:focus {
-    outline: none;
-    border-color: rgb(59, 130, 246);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.dark .form-input,
-.dark .form-select,
-.dark .form-textarea {
-    background-color: rgb(55, 65, 81);
-    border-color: rgb(75, 85, 99);
-    color: rgb(255, 255, 255);
-}
-
-.dark .form-input:focus,
-.dark .form-select:focus,
-.dark .form-textarea:focus {
-    border-color: rgb(96, 165, 250);
-    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
-}
-
-.form-textarea {
-    resize: vertical;
-    min-height: 4rem;
-}
-
-/* Form Actions */
-.form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
-    margin-top: 1.5rem;
-}
-
-.btn {
-    padding: 0.5rem 1rem;
-    border-radius: 0.375rem;
-    font-weight: 500;
-    transition: all 150ms;
-    cursor: pointer;
-}
-
-.btn-primary {
-    background-color: rgb(59, 130, 246);
-    color: white;
-}
-
-.btn-primary:hover {
-    background-color: rgb(37, 99, 235);
-}
-
-.btn-secondary {
-    background-color: transparent;
-    color: rgb(55, 65, 81);
-    border: 1px solid rgb(209, 213, 219);
-}
-
-.btn-secondary:hover {
-    background-color: rgb(249, 250, 251);
-}
-
-.dark .btn-secondary {
-    color: rgb(209, 213, 219);
-    border-color: rgb(75, 85, 99);
-}
-
-.dark .btn-secondary:hover {
-    background-color: rgb(55, 65, 81);
-}
-
-.btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* Layout Styles */
+/* Contenido principal */
 main {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 0 1rem;
-    padding-top: 140px; /* Más espacio para el menú móvil y títulos */
+  flex: 1;
+  margin-left: 14rem; /* Igual al ancho del sidebar */
+  width: calc(100% - 14rem);
+  padding: 1rem;
+  transition: margin-left 0.3s ease-in-out;
 }
 
-@media (min-width: 768px) {
-    main {
-        padding-top: 2rem; /* Menos espacio en desktop */
-    }
-}
-
-/* Mobile Navigation */
+/* Menú móvil */
 #mobile-nav {
-    display: none;
-    position: fixed;
-    top: 60px; /* Debajo del encabezado móvil */
-    left: 0;
-    right: 0;
-    background: #1a202c;
-    z-index: 1000;
-    padding: 0.5rem 0;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    border-top: 1px solid #2d3748;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #1f2937;
+  z-index: 50;
+  display: none;
 }
 
 #mobile-nav ul {
-    display: flex;
-    list-style: none;
-    margin: 0;
-    padding: 0 0.5rem;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    white-space: nowrap;
-    scrollbar-width: none; /* Ocultar scrollbar en Firefox */
-}
-
-#mobile-nav ul::-webkit-scrollbar {
-    display: none; /* Ocultar scrollbar en Chrome/Safari */
+  display: flex;
+  justify-content: space-around;
+  padding: 0.5rem 0;
+  margin: 0;
 }
 
 #mobile-nav li {
-    flex: 0 0 auto;
-    margin: 0 0.25rem;
+  list-style: none;
 }
 
 #mobile-nav a {
-    display: inline-flex;
-    align-items: center;
-    color: #e2e8f0;
-    text-decoration: none;
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-    border-radius: 0.375rem;
-    transition: all 0.2s ease;
-    white-space: nowrap;
+  color: white;
+  text-decoration: none;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.75rem;
 }
 
-#mobile-nav a i {
-    margin-right: 0.5rem;
-    font-size: 1rem;
+#mobile-nav i {
+  font-size: 1.25rem;
+  margin-bottom: 0.25rem;
 }
 
-#mobile-nav a:hover,
-#mobile-nav a.active {
-    background-color: #2d3748;
-    color: white;
-}
-
-/* Hide desktop sidebar on mobile */
+/* Ajustes para móvil */
 @media (max-width: 767px) {
-    #sidebar {
-        transform: translateX(-100%);
-        position: fixed;
-        top: 60px;
-        bottom: 0;
-        z-index: 900;
-        transition: transform 0.3s ease-in-out;
-    }
-    
-    #sidebar.active {
-        transform: translateX(0);
-    }
-    
-    #mobile-nav {
-        display: block;
-    }
-    
-    /* Adjust main content for mobile */
-    main {
-        margin-left: 0;
-        padding-top: 60px; /* Space for mobile nav */
-    }
-}
+  #sidebar {
+    transform: translateX(-100%);
+  }
 
-/* Desktop styles */
-@media (min-width: 768px) {
-    #mobile-nav {
-        display: none;
-    }
-    
-    main {
-        margin-left: 16rem; /* Width of the sidebar */
-        padding-top: 0;
-    }
-}
+  #sidebar.active {
+    transform: translateX(0);
+  }
 
-/* Table Styles */
-#recent-orders,
-#reservations-table {
-    max-width: 1200px;
+  main {
+    margin-left: 0;
     width: 100%;
-    margin: 0 auto;
+    padding-bottom: 4rem; /* Espacio para el menú móvil */
+  }
+
+  #mobile-nav {
+    display: block;
+  }
 }
 
-/* Utility Classes */
-.hidden {
+/* Ajustes para escritorio */
+@media (min-width: 768px) {
+  #mobile-menu-btn {
     display: none;
+  }
+  
+  #sidebar-overlay {
+    display: none !important;
+  }
 }
 
-.text-error {
-    color: rgb(239, 68, 68);
+/* Estilos para el tema oscuro */
+.dark #sidebar {
+  background-color: #111827;
+  border-right: 1px solid #374151;
 }
 
-.dark .text-error {
-    color: rgb(248, 113, 113);
+.dark #mobile-nav {
+  background-color: #111827;
+  border-top: 1px solid #374151;
+}
+
+/* Transición suave para el tema oscuro */
+.transition-colors {
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Ajustes para las tarjetas en móvil */
+@media (max-width: 639px) {
+  .grid-cols-1 > div {
+    margin-bottom: 1rem;
+  }
 }

@@ -237,17 +237,27 @@ async function loadDashboardStats() {
 }
 
 function updateRecentOrdersTable(orders) {
-    const tbody = document.querySelector('#recent-orders tbody');
-    if (!tbody) return;
+    const table = document.getElementById('recent-orders');
+    if (!table) return;
+    
+    const tbody = table.querySelector('tbody');
+    const thead = table.querySelector('thead');
+    
+    if (!tbody || !thead) return;
     
     tbody.innerHTML = '';
-
+    
+    // Ocultar el thead si no hay pedidos
     if (orders.length === 0) {
+        thead.style.display = 'none';
         const row = document.createElement('tr');
         row.innerHTML = `<td colspan="4" class="py-4 text-center text-gray-500">No hay pedidos hoy</td>`;
         tbody.appendChild(row);
         return;
     }
+    
+    // Mostrar el thead si hay pedidos
+    thead.style.display = '';
     
     orders.forEach(order => {
         const row = document.createElement('tr');

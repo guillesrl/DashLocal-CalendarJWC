@@ -29,7 +29,7 @@
 
     <!-- Mobile menu button -->
     <div class="md:hidden bg-dark text-white p-4 flex items-center justify-between">
-        <h1 class="text-xl font-bold">Restaurant</h1>
+        <h1 class="text-2xl font-bold">Dashboard</h1>
         <div class="flex items-center space-x-2">
             <button id="dark-mode-toggle-mobile" class="bg-gray-700 border border-gray-600 p-2 rounded-lg hover:bg-secondary transition" title="Cambiar modo">
                 <i class="fas fa-moon text-xl" id="dark-mode-icon-mobile"></i>
@@ -39,10 +39,10 @@
             </button>
         </div>
     </div>
-    <br><br>
-    <div class="flex">
+
+    <div class="relative w-full">
         <!-- Sidebar -->
-        <aside id="sidebar" class="fixed md:relative w-64 bg-dark text-white min-h-screen p-4 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out z-50">
+        <aside id="sidebar" class="fixed md:fixed w-56 bg-dark text-white min-h-screen p-3 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out z-50 left-0 top-0">
             <div class="flex items-center justify-between mb-8">
                 <h1 class="text-2xl font-bold">Restaurant</h1>
                 <button id="dark-mode-toggle" class="bg-gray-700 border border-gray-600 p-2 rounded-lg hover:bg-gray-600 transition" title="Cambiar modo">
@@ -50,30 +50,30 @@
                 </button>
             </div>
             
-            <nav>
+            <nav class="mt-4">
                 <ul class="space-y-2">
                     <li>
-                        <a href="#" data-section="dashboard" class="flex items-center p-2 rounded hover:bg-secondary transition nav-link text-white dark:text-white">
-                            <i class="fas fa-tachometer-alt mr-3"></i>
-                            Dashboard
+                        <a href="#" data-section="dashboard" class="flex items-center p-3 text-base rounded-lg hover:bg-secondary transition nav-link text-white dark:text-white">
+                            <i class="fas fa-tachometer-alt text-lg w-6 text-center mr-3"></i>
+                            <span class="font-medium">Dashboard</span>
                         </a>
                     </li>
                     <li>
-                        <a href="#" data-section="menu" class="flex items-center p-2 rounded hover:bg-secondary transition nav-link text-white dark:text-white">
-                            <i class="fas fa-utensils mr-3"></i>
-                            Menú
+                        <a href="#" data-section="menu" class="flex items-center p-3 text-base rounded-lg hover:bg-secondary transition nav-link text-white dark:text-white">
+                            <i class="fas fa-utensils text-lg w-6 text-center mr-3"></i>
+                            <span class="font-medium">Menú</span>
                         </a>
                     </li>
                     <li>
-                        <a href="#" data-section="orders" class="flex items-center p-2 rounded hover:bg-secondary transition nav-link text-white dark:text-white">
-                            <i class="fas fa-clipboard-list mr-3"></i>
-                            Pedidos
+                        <a href="#" data-section="orders" class="flex items-center p-3 text-base rounded-lg hover:bg-secondary transition nav-link text-white dark:text-white">
+                            <i class="fas fa-clipboard-list text-lg w-6 text-center mr-3"></i>
+                            <span class="font-medium">Pedidos</span>
                         </a>
                     </li>
                     <li>
-                        <a href="#" data-section="reservations" class="flex items-center p-2 rounded hover:bg-secondary transition nav-link text-white dark:text-white">
-                            <i class="fas fa-calendar-alt mr-3"></i>
-                            Reservas
+                        <a href="#" data-section="reservations" class="flex items-center p-3 text-base rounded-lg hover:bg-secondary transition nav-link text-white dark:text-white">
+                            <i class="fas fa-calendar-alt text-lg w-6 text-center mr-3"></i>
+                            <span class="font-medium">Reservas</span>
                         </a>
                     </li>
                 </ul>
@@ -84,66 +84,71 @@
         <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden hidden"></div>
         
         <!-- Main Content -->
-        <main class="flex-1 p-4 md:p-8 w-full dark:text-white">
+        <main class="md:ml-56 p-3 md:pt-2 md:pl-0 dark:text-white w-[calc(100%-14rem)]">
             <!-- Dashboard Section -->
             <section id="dashboard" class="section-content active">
-                <h2 class="text-2xl font-bold mb-6">Resumen del Restaurante</h2>
+                <h3 class="text-xl font-bold mb-4 mt-2">Resumen del Restaurante</h3>
                 
-                <div class="grid grid-cols-3 gap-6 mb-6 md:mb-8">
-                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow flex items-center">
-                        <div class="rounded-full p-3 mr-4">
-                            <i class="fas fa-clipboard-list text-white text-xl"></i>
+                <div class="flex flex-wrap gap-6 mb-8">
+                    <!-- Tarjeta de Pedidos -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 flex-1 min-w-[280px] max-w-[320px] mx-auto sm:mx-0">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Pedidos</h3>
+                            <div class="p-1">
+                                <i class="fas fa-clipboard-list text-gray-400 dark:text-gray-400 text-sm"></i>
+                            </div>
                         </div>
-                        <div class="flex-1">
-                            <h3 class="text-xl font-medium text-gray-500 dark:text-gray-400">Pedidos</h3>
-                            <div class="flex items-baseline justify-between">
-                                <div>
-                                    <p class="text-3xs font-bold text-gray-900 dark:text-white" id="today-orders">0</p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400">Hoy</p>
-                                </div>
-                                /
-                                <div>
-                                    <p class="text-3xs font-bold text-gray-900 dark:text-white" id="month-orders">0</p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400">Mes</p>
-                                </div>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-lg font-bold text-gray-900 dark:text-white" id="today-orders">0</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">Hoy</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-lg font-bold text-gray-900 dark:text-white" id="month-orders">0</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">Mes</p>
                             </div>
                         </div>
                     </div>
-                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow flex items-center">
-                        <div class="bg-green-500 rounded-full p-3 mr-4">
-                            <i class="fas fa-calendar-alt text-white text-xl"></i>
+
+                    <!-- Tarjeta de Reservas -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 flex-1 min-w-[280px] max-w-[320px] mx-auto sm:mx-0">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Reservas</h3>
+                            <div class="p-1">
+                                <i class="fas fa-calendar-alt text-green-600 dark:text-green-300 text-sm"></i>
+                            </div>
                         </div>
-                        <div class="flex-1">
-                            <h3 class="text-xl font-medium text-gray-500 dark:text-gray-400">Reservas</h3>
-                            <div class="flex items-baseline justify-between">
-                                <div>
-                                    <p class="text-3xs font-bold text-gray-900 dark:text-white" id="today-reservations">0</p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400">Hoy</p>
-                                </div>
-                                /
-                                <div>
-                                    <p class="text-3xs font-bold text-gray-900 dark:text-white" id="month-reservations">0</p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400">Mes</p>
-                                </div>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-lg font-bold text-gray-900 dark:text-white" id="today-reservations">0</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">Hoy</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-lg font-bold text-gray-900 dark:text-white" id="month-reservations">0</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">Mes</p>
                             </div>
                         </div>
                     </div>
-                    <div class="bg-white dark:bg-gray-800 p-3 rounded-lg shadow flex items-center">
-                        <div class="bg-green-500 rounded-full p-3 mr-4">
-                            <i class="fas fa-dollar-sign text-white text-xl"></i>
+
+                    <!-- Tarjeta de Ingresos -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 flex-1 min-w-[280px] max-w-[320px] mx-auto sm:mx-0">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Ingresos</h3>
+                            <div class="p-1">
+                                <i class="fas fa-dollar-sign text-yellow-600 dark:text-yellow-300 text-sm"></i>
+                            </div>
                         </div>
-                        <div class="flex-1">
-                            <h3 class="text-xl font-medium text-gray-500 dark:text-gray-400">Ingresos</h3>
-                            <div class="flex items-baseline justify-between">
-                                <div>
-                                    <p class="text-3xs text-gray-900 dark:text-white" id="today-revenue">$0</p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400">Hoy</p>
-                                </div>
-                                /
-                                <div>
-                                    <p class="text-3xs text-gray-900 dark:text-white" id="month-revenue">$0</p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400">Mes</p>
-                                </div>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-lg  text-gray-900 dark:text-white" id="today-revenue">0.00</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">Hoy</p>
+                            </div>
+                            <div>
+                            $$$
+                            </div>
+                            <div class="text-right">
+                                <p class="text-lg  text-gray-900 dark:text-white" id="month-revenue">144.50</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">Mes</p>
                             </div>
                         </div>
                     </div>
@@ -151,22 +156,24 @@
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <!-- Sección de Pedidos Recientes -->
-                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow w-full">
                         <h3 class="text-base font-semibold mb-4 dark:text-white">Pedidos Recientes</h3>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full" id="recent-orders">
-                                <thead>
-                                    <tr>
-                                        <th class="py-2 text-left">Cliente</th>
-                                        <th class="py-2 text-left">Hora</th>
-                                        <th class="py-2 text-left">Total</th>
-                                        <th class="py-2 text-left">Estado</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Filled by JavaScript -->
-                                </tbody>
-                            </table>
+                        <div class="table-container">
+                            <div class="w-full overflow-x-auto">
+                                <table id="recent-orders">
+                                    <thead>
+                                        <tr>
+                                            <th class="py-2 px-4 text-left">Cliente</th>
+                                            <th class="py-2 px-4 text-left">Hora</th>
+                                            <th class="py-2 px-4 text-left">Total</th>
+                                            <th class="py-2 px-4 text-left">Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Filled by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
 

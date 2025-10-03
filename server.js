@@ -1,8 +1,22 @@
 console.log('🚀 Iniciando servidor...');
 
+const path = require('path');
+
+// Cargar variables de entorno primero
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
+
+// Verificar variables de entorno críticas
+console.log('🔍 Verificando variables de entorno...');
+const requiredEnvVars = ['SUPABASE_URL', 'SUPABASE_KEY', 'GOOGLE_CALENDAR_ID'];
+const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+if (missingVars.length > 0) {
+    console.error(`❌ Faltan variables de entorno requeridas: ${missingVars.join(', ')}`);
+    process.exit(1);
+}
 
 // Configuración de variables de entorno
 console.log('🔍 Verificando variables de entorno...');
@@ -11,19 +25,28 @@ console.log('SUPABASE_URL:', process.env.SUPABASE_URL ? '✅ Configurada' : '❌
 console.log('SUPABASE_KEY:', process.env.SUPABASE_KEY ? '✅ Configurada' : '❌ No configurada');
 console.log('GOOGLE_CALENDAR_ID:', process.env.GOOGLE_CALENDAR_ID ? '✅ Configurada' : '❌ No configurada');
 
-// Import routes
-console.log('🔄 Importando rutas...');
+// Import database configuration
+console.log('🔄 Importando configuración de base de datos...');
 try {
-    const { testConnection, supabase } = require('../config/database');
+    const { testConnection, supabase } = require('./config/database');
     console.log('✅ Módulo de base de datos importado correctamente');
 } catch (error) {
     console.error('❌ Error al importar el módulo de base de datos:', error);
     process.exit(1);
 }
 
-const menuRoutes = require('../routes/menu');
-const ordersRoutes = require('../routes/orders');
-const reservationsRoutes = require('../routes/reservations');
+// Import routes
+console.log('🔄 Importando rutas...');
+let menuRoutes, ordersRoutes, reservationsRoutes;
+try {
+    menuRoutes = require('./routes/menu');
+    ordersRoutes = require('./routes/orders');
+    reservationsRoutes = require('./routes/reservations');
+    console.log('✅ Rutas importadas correctamente');
+} catch (error) {
+    console.error('❌ Error al importar las rutas:', error);
+    process.exit(1);
+}
 
 const app = express();
 
@@ -31,6 +54,9 @@ const app = express();
 console.log('🛠️ Configurando middleware...');
 app.use(cors());
 app.use(express.json());
+
+// Servir archivos estáticos desde la carpeta public
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Middleware de registro de solicitudes
 app.use((req, res, next) => {
@@ -107,7 +133,7 @@ app.get('/api/debug/calendar', (req, res) => {
 // Google Calendar debug endpoint
 app.get('/api/debug/calendar-init', async (req, res) => {
     try {
-        const GoogleCalendarBackendService = require('../services/calendar-backend');
+        const GoogleCalendarBackendService = require('./services/calendar-backend');
         const calendarService = new GoogleCalendarBackendService();
         await calendarService.initialize();
         res.json({ status: 'success', message: 'Google Calendar service initialized successfully' });
@@ -123,8 +149,19 @@ app.use((err, req, res, next) => {
 });
 
 // 404 handler for API routes
-app.use('/api/*', (req, res) => {
-    res.status(404).json({ error: 'API endpoint not found' });
+app.use('/api/:any', (req, res) => {
+    res.status(404).json({ error: 'API endpoint not found', path: req.path });
+});
+
+// Catch-all for any other routes
+app.use((req, res) => {
+    res.status(404).json({ error: 'Endpoint not found', path: req.path });
 });
 
 module.exports = app;
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`✅ Servidor escuchando en http://localhost:${PORT}`);
+});
